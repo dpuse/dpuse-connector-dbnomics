@@ -1,0 +1,11 @@
+{
+  "version": "0.0.4",
+  "name": "@dpuse/dpuse-connector-template",
+  "dependencies": {
+    "@dpuse/dpuse-shared": {
+      "version": "0.3.737",
+      "resolved": "https://registry.npmjs.org/@dpuse/dpuse-shared/-/dpuse-shared-0.3.737.tgz",
+      "overridden": false
+    }
+  }
+}
