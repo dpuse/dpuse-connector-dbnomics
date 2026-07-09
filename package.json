@@ -1,6 +1,6 @@
 {
-    "name": "@dpuse/dpuse-connector-template",
-    "version": "0.0.10",
+    "name": "@dpuse/dpuse-connector-dbnomics",
+    "version": "0.0.11",
     "private": false,
     "description": "Template scaffold for building new DPUse connectors.",
     "license": "MIT",
@@ -9,17 +9,17 @@
     "sideEffects": false,
     "homepage": "https://www.dpuse.app",
     "bugs": {
-        "url": "https://github.com/dpuse/dpuse-connector-template/issues"
+        "url": "https://github.com/dpuse/dpuse-connector-dbnomics/issues"
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/dpuse/dpuse-connector-template.git"
+        "url": "git+https://github.com/dpuse/dpuse-connector-dbnomics.git"
     },
-    "module": "./dist/dpuse-connector-template.es.js",
+    "module": "./dist/dpuse-connector-dbnomics.es.js",
     "types": "./dist/types/src/index.d.ts",
     "exports": {
         ".": {
-            "import": "./dist/dpuse-connector-template.es.js",
+            "import": "./dist/dpuse-connector-dbnomics.es.js",
             "types": "./dist/types/src/index.d.ts"
         }
     },
@@ -36,7 +36,7 @@
         "fsevents@2.3.3": true,
         "sharp@0.34.5": true,
         "unrs-resolver@1.12.2": true,
-        "workerd@1.20260706.1": true
+        "workerd@1.20260708.1": true
     },
     "scripts": {
         "audit": "node -e \"import('@dpuse/dpuse-development').then(m => m.auditDependencies())\"",
@@ -67,9 +67,9 @@
         "prettier": "^3.9.4",
         "sonda": "^0.14.0",
         "typescript": "^6.0.3",
-        "vite": "^8.1.3",
+        "vite": "^8.1.4",
         "vite-plugin-dts": "^5.0.3",
         "vitest": "^4.1.10",
-        "wrangler": "^4.108.0"
+        "wrangler": "^4.109.0"
     }
 }

@@ -1,23 +1,23 @@
 # Using this template
 
-This repo is registered as a GitHub template repository (Settings → Template repository). It ships as a valid, buildable, passing-lint connector — every file works as-is under the name `dpuse-connector-template`. Delete this file once you're done renaming it into your new connector.
+This repo is registered as a GitHub template repository (Settings → Template repository). It ships as a valid, buildable, passing-lint connector — every file works as-is under the name `dpuse-connector-dbnomics`. Delete this file once you're done renaming it into your new connector.
 
 ## 1. Generate a new repo from this template
 
 ```bash
-gh repo create dpuse/dpuse-connector-<name> --public --template dpuse/dpuse-connector-template
+gh repo create dpuse/dpuse-connector-<name> --public --template dpuse/dpuse-connector-dbnomics
 git clone https://github.com/dpuse/dpuse-connector-<name>.git
 cd dpuse-connector-<name>
 ```
 
 (Or use the green "Use this template" button on the GitHub repo page.)
 
-## 2. Rename `dpuse-connector-template` to your connector's id
+## 2. Rename `dpuse-connector-dbnomics` to your connector's id
 
-The literal string `dpuse-connector-template` appears in `package.json` (name, bugs.url, repository.url, module/exports filenames), `config.json` (id), `README.md`, and `SECURITY.md`. Replace it everywhere:
+The literal string `dpuse-connector-dbnomics` appears in `package.json` (name, bugs.url, repository.url, module/exports filenames), `config.json` (id), `README.md`, and `SECURITY.md`. Replace it everywhere:
 
 ```bash
-grep -rl 'dpuse-connector-template' --exclude-dir=node_modules --exclude-dir=.git -Z . | xargs -0 sed -i '' 's/dpuse-connector-template/dpuse-connector-<name>/g'
+grep -rl 'dpuse-connector-dbnomics' --exclude-dir=node_modules --exclude-dir=.git -Z . | xargs -0 sed -i '' 's/dpuse-connector-dbnomics/dpuse-connector-<name>/g'
 ```
 
 Then update, by hand, in `config.json`:

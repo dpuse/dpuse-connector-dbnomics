@@ -1,17 +1,14 @@
-# DPUse Connector Template
-
-> [!WARNING]
-> **Using this as a template?** Read [TEMPLATE.md](./TEMPLATE.md) first, then delete this note along with that file once you're done.
+# DPUse DBnomics Connector
 
 <!-- OPENING_START -->
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
-[![DPUse version](https://img.shields.io/github/v/release/dpuse/dpuse-connector-template?color=f6821f&label=DPUse)](https://github.com/dpuse/dpuse-connector-template/releases/latest)
-[![CI](https://github.com/dpuse/dpuse-connector-template/actions/workflows/ci.yml/badge.svg)](https://github.com/dpuse/dpuse-connector-template/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/dpuse/dpuse-connector-template/actions/workflows/codeql.yml/badge.svg)](https://github.com/dpuse/dpuse-connector-template/actions/workflows/codeql.yml)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=dpuse_dpuse-connector-template&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=dpuse_dpuse-connector-template)
+[![DPUse version](https://img.shields.io/github/v/release/dpuse/dpuse-connector-dbnomics?color=f6821f&label=DPUse)](https://github.com/dpuse/dpuse-connector-dbnomics/releases/latest)
+[![CI](https://github.com/dpuse/dpuse-connector-dbnomics/actions/workflows/ci.yml/badge.svg)](https://github.com/dpuse/dpuse-connector-dbnomics/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/dpuse/dpuse-connector-dbnomics/actions/workflows/codeql.yml/badge.svg)](https://github.com/dpuse/dpuse-connector-dbnomics/actions/workflows/codeql.yml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=dpuse_dpuse-connector-dbnomics&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=dpuse_dpuse-connector-dbnomics)
 
-[Documentation](https://www.dpuse.app) · [Report a Vulnerability](https://github.com/dpuse/dpuse-connector-template/security/advisories/new) · [Open an Issue](https://github.com/dpuse/dpuse-connector-template/issues)
+[Documentation](https://www.dpuse.app) · [Report a Vulnerability](https://github.com/dpuse/dpuse-connector-dbnomics/security/advisories/new) · [Open an Issue](https://github.com/dpuse/dpuse-connector-dbnomics/issues)
 
 ## About DPUse
 
@@ -31,22 +28,22 @@ Connectors conform to a unified interface contract by implementing a specific su
 
 This connector is a Bidirectional connector that supports both read and write actions. Connectors can also function as a Source (read-only) or Destination (write-only), depending on the actions they support. The table below lists all connector actions and highlights those supported by this connector.
 
-| Action               | Supported |
-| :------------------- | :-------: |
-| Abort Operation      |     ✓     |
-| Audit Object Content |     ✓     |
-| Create Object        |     ✓     |
-| Describe Connection  |     ✓     |
-| Drop Object          |     ✓     |
-| Find Object          |     ✓     |
-| Get Readable Stream  |     ✓     |
-| Get Record           |     ✓     |
-| List Nodes           |     ✓     |
-| Preview Object       |     ✓     |
-| Remove Records       |     ✓     |
-| Retrieve Chunks      |     ✓     |
-| Retrieve Records     |     ✓     |
-| Upsert Records       |     ✓     |
+|Action|Supported|
+|:----|:-------:|
+| Abort Operation | ✓ |
+| Audit Object Content | ✓ |
+| Create Object | ✓ |
+| Describe Connection | ✓ |
+| Drop Object | ✓ |
+| Find Object | ✓ |
+| Get Readable Stream | ✓ |
+| Get Record | ✓ |
+| List Nodes | ✓ |
+| Preview Object | ✓ |
+| Remove Records | ✓ |
+| Retrieve Chunks | ✓ |
+| Retrieve Records | ✓ |
+| Upsert Records | ✓ |
 
 <!-- CONNECTOR_ACTIONS_END -->
 
@@ -59,8 +56,8 @@ This connector is automatically uploaded to the DPUse Engine cloud once released
 You may view or clone this repository for your own purposes, such as building a new, similar connector, though there is currently no process to accept third-party connectors into DPUse at this stage. Cloned or forked code is unsupported and isn't guaranteed to remain compatible with the DPUse Engine as it evolves.
 
 ```bash
-git clone https://github.com/dpuse/dpuse-connector-template.git
-cd dpuse-connector-template
+git clone https://github.com/dpuse/dpuse-connector-dbnomics.git
+cd dpuse-connector-dbnomics
 npm install
 ```
 
@@ -74,9 +71,9 @@ _Requires [Node.js](https://nodejs.org/) 23.11 or later, [npm](https://www.npmjs
 
 License data is collected automatically on each release using [license-checker](https://github.com/RSeidelsohn/license-checker-rseidelsohn). The following table lists all production dependencies. These dependencies (including transitive ones) have been checked and confirmed to use BSD-3-Clause or MIT — all permissive, commercially-friendly licenses. Users of the uploaded library are covered by these checks; developers cloning this repository should independently verify development dependencies.
 
-| Dependency                                                   | Version | License(s) | Document                                                              |
-| :----------------------------------------------------------- | :-----: | :--------- | :-------------------------------------------------------------------- |
-| [@dpuse/dpuse-shared](https://github.com/dpuse/dpuse-shared) | 0.3.737 | MIT        | [LICENSE](licenses/downloads/@dpuse/dpuse-shared@0.3.737-LICENSE.txt) |
+|Dependency|Version|License(s)|Document|
+|:-|:-:|:-|:-|
+|[@dpuse/dpuse-shared](https://github.com/dpuse/dpuse-shared)|0.3.737|MIT|[LICENSE](licenses/downloads/@dpuse/dpuse-shared@0.3.737-LICENSE.txt)|
 
 <!-- DEPENDENCY_LICENSES_END -->
 
@@ -98,12 +95,12 @@ The Bundle Analysis Report is generated automatically on each release using [Son
 
 _Note: Sonda's Vite reports currently exclude CSS files, since Vite does not generate source maps for CSS._
 
-| Chunk/Module/File                                                            | Composition                  |
-| :--------------------------------------------------------------------------- | :--------------------------- |
-| dist/dpuse-connector-template.es.js                                          | 5.5 kB · brotli 1.1 kB       |
-| &nbsp;&nbsp;&nbsp;&nbsp;src → index.ts                                       | `██████████░░░░░░░░░░` 49.6% |
-| &nbsp;&nbsp;&nbsp;&nbsp;(unassigned) → [unassigned]                          | `█████████░░░░░░░░░░░` 42.6% |
-| &nbsp;&nbsp;&nbsp;&nbsp;@dpuse/dpuse-shared → dist/dpuse-shared-errors.es.js | `██░░░░░░░░░░░░░░░░░░` 7.8%  |
+|Chunk/Module/File|Composition|
+|:------ |:-----------|
+| dist/dpuse-connector-dbnomics.es.js | 5.2 kB · brotli 1.3 kB |
+| &nbsp;&nbsp;&nbsp;&nbsp;src → index.ts | `██████████░░░░░░░░░░` 52.5% |
+| &nbsp;&nbsp;&nbsp;&nbsp;(unassigned) → [unassigned] | `████████░░░░░░░░░░░░` 39.3% |
+| &nbsp;&nbsp;&nbsp;&nbsp;@dpuse/dpuse-shared → dist/dpuse-shared-errors.es.js | `██░░░░░░░░░░░░░░░░░░` 8.2% |
 
 <!-- BUNDLE_END -->
 
@@ -113,11 +110,11 @@ _Note: Sonda's Vite reports currently exclude CSS files, since Vite does not gen
 
 ### CodeQL
 
-[CodeQL](https://github.com/dpuse/dpuse-connector-template/security/code-scanning) static analysis runs on every push to `main` and on a weekly schedule, scanning TypeScript, JavaScript, Rust, and GitHub Actions workflow files for security vulnerabilities and coding errors.
+[CodeQL](https://github.com/dpuse/dpuse-connector-dbnomics/security/code-scanning) static analysis runs on every push to `main` and on a weekly schedule, scanning TypeScript, JavaScript, Rust, and GitHub Actions workflow files for security vulnerabilities and coding errors.
 
 ### SonarCloud
 
-[SonarCloud](https://sonarcloud.io/summary/new_code?id=dpuse_dpuse-connector-template) performs continuous code quality and security analysis on every push, detecting bugs, code smells, and security vulnerabilities in the TypeScript source.
+[SonarCloud](https://sonarcloud.io/summary/new_code?id=dpuse_dpuse-connector-dbnomics) performs continuous code quality and security analysis on every push, detecting bugs, code smells, and security vulnerabilities in the TypeScript source.
 
 ### Vulnerability Scanning
 
@@ -132,19 +129,19 @@ Two complementary tools continuously monitor dependencies for known vulnerabilit
 
 ### Reporting Vulnerabilities
 
-Please do not open public GitHub issues for security vulnerabilities. Use [GitHub private vulnerability reporting](https://github.com/dpuse/dpuse-connector-template/security/advisories/new) instead. See [SECURITY.md](./SECURITY.md) for the full disclosure policy, contact details, and expected response times.
+Please do not open public GitHub issues for security vulnerabilities. Use [GitHub private vulnerability reporting](https://github.com/dpuse/dpuse-connector-dbnomics/security/advisories/new) instead. See [SECURITY.md](./SECURITY.md) for the full disclosure policy, contact details, and expected response times.
 
 ### OpenSSF 🚧
 
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/dpuse/dpuse-connector-template/badge)](https://scorecard.dev/viewer/?uri=github.com/dpuse/dpuse-connector-template)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/dpuse/dpuse-connector-dbnomics/badge)](https://scorecard.dev/viewer/?uri=github.com/dpuse/dpuse-connector-dbnomics)
 
-This project is working towards the [OpenSSF Best Practices](https://www.bestpractices.dev) Passing badge, a self-certification covering security policy, vulnerability reporting, build processes, code quality, and more. Currently the [OpenSSF Scorecard](https://scorecard.dev/viewer/?uri=github.com/dpuse/dpuse-connector-template) provides an independent automated assessment of the project's security practices and is an ongoing area of improvement.
+This project is working towards the [OpenSSF Best Practices](https://www.bestpractices.dev) Passing badge, a self-certification covering security policy, vulnerability reporting, build processes, code quality, and more. Currently the [OpenSSF Scorecard](https://scorecard.dev/viewer/?uri=github.com/dpuse/dpuse-connector-dbnomics) provides an independent automated assessment of the project's security practices and is an ongoing area of improvement.
 
 ## Contributing
 
 This repository is maintained solely by its owner and does not, at present, accept external contributions into the canonical repo. Its source is published openly under the MIT License — every DPUse project is fully open source except DPUse Engine, which remains closed and proprietary.
 
-For security vulnerabilities, see [Reporting Vulnerabilities](#reporting-vulnerabilities). For bugs, inconsistencies, or other feedback, [open a GitHub issue](https://github.com/dpuse/dpuse-connector-template/issues) — feedback is read, but responses and fixes are at the maintainer's discretion.
+For security vulnerabilities, see [Reporting Vulnerabilities](#reporting-vulnerabilities). For bugs, inconsistencies, or other feedback, [open a GitHub issue](https://github.com/dpuse/dpuse-connector-dbnomics/issues) — feedback is read, but responses and fixes are at the maintainer's discretion.
 
 ## License
 
