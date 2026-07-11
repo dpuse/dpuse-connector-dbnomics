@@ -1,6 +1,5 @@
 // ── DPUse Framework
-import type { ConnectionDescriptionConfig } from '@dpuse/dpuse-shared/component/connection';
-import { normalizeToError } from '@dpuse/dpuse-shared/errors';
+import type { ConnectionNodeConfig } from '@dpuse/dpuse-shared/component/connection';
 import type { ToolConfig } from '@dpuse/dpuse-shared/component/module/tool';
 import type {
     AuditObjectContentOptions,
@@ -8,47 +7,73 @@ import type {
     ConnectorConfig,
     ConnectorInterface,
     ConnectorUtilities,
-    CreateObjectOptions,
-    DescribeConnectionOptions,
-    DropObjectOptions,
     FindObjectOptions,
     FindObjectResult,
     GetReadableStreamOptions,
-    GetRecordOptions,
-    GetRecordResult,
     ListNodesOptions,
     ListNodesResult,
     PreviewObjectOptions,
     RecordRetrievalTypeId,
-    RemoveRecordsOptions,
-    RetrieveChunksOptions,
     RetrieveRecordsOptions,
-    RetrieveRecordsSummary,
-    UpsertRecordsOptions
+    RetrieveRecordsSummary
 } from '@dpuse/dpuse-shared/component/module/connector';
+import { ConnectorError, normalizeToError } from '@dpuse/dpuse-shared/errors';
 import type { ParsingRecord, PreviewConfig } from '@dpuse/dpuse-shared/component/dataView';
 
 // ── Data
 import config from '~/config.json';
 
+// ── Types ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+// Extend default connector interface with an instance-scoped, TTL'd, LRU-bounded response cache.
+interface ExtendedConnectorInterface extends ConnectorInterface {
+    responseCache: Map<string, CacheEntry>;
+}
+
+interface CacheEntry {
+    expiresAt: number;
+    value: unknown;
+}
+
+interface DBnomicsPage<T> {
+    docs: T[];
+    num_found: number;
+}
+
+interface ProvidersResponse {
+    providers: DBnomicsPage<{ code: string; name: string }>;
+}
+
+interface DatasetsResponse {
+    datasets: DBnomicsPage<{ code: string; name: string; nb_series: number }>;
+}
+
+interface SeriesListResponse {
+    series: DBnomicsPage<{ series_code: string; series_name: string }>;
+}
+
+// ── Constants ────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+const API_BASE_URL = 'https://api.db.nomics.world/v22';
+const CACHE_MAX_ENTRIES = 200; // Bounds memory for long browsing sessions; oldest page evicted once exceeded.
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour.
+const DEFAULT_PAGE_SIZE = 100;
+const ERROR_INVALID_FOLDER_PATH = 'Encountered invalid folder path';
+
 // ── Connectors ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
-// Every action from the ConnectorInterface contract is stubbed below so you can see the full surface area. Delete
-// whichever methods your connector doesn't need, and trim config.json's actionNames to match what's left. Actions
-// with a real reference implementation among the sibling connectors are noted; the rest (describeConnection,
-// retrieveChunks) follow the same abortController/try-catch-finally shape but have no existing reference. Use
-// loadTool(this.toolConfigs, 'tool-name') from '@dpuse/dpuse-shared/component/module/tool' to lazily load a
-// DPUse tool package (e.g. csv-parse, file-operators) once your implementation needs one.
-export class Connector implements ConnectorInterface {
+export class Connector implements ExtendedConnectorInterface {
     abortController: AbortController | undefined;
     readonly config: ConnectorConfig;
     connectorUtilities: ConnectorUtilities;
+    responseCache: Map<string, CacheEntry>;
     readonly toolConfigs;
 
     constructor(connectorUtilities: ConnectorUtilities, toolConfigs: ToolConfig[]) {
         this.abortController = undefined;
         this.config = config as ConnectorConfig;
         this.connectorUtilities = connectorUtilities;
+        this.responseCache = new Map();
         this.toolConfigs = toolConfigs;
     }
 
@@ -67,51 +92,8 @@ export class Connector implements ConnectorInterface {
 
         try {
             await Promise.resolve();
-            // Audit the object at options.path, reporting progress via chunk().
+            // Audit the series observations at options.path.
             return { processedRowCount: 0, durationMs: 0 };
-        } catch (error) {
-            throw normalizeToError(error);
-        } finally {
-            this.abortController = undefined;
-        }
-    }
-
-    // Create an object at the specified path — see dpuse-connector-dexie-js for a fuller reference
-    async createObject(options: CreateObjectOptions): Promise<void> {
-        this.abortController = new AbortController();
-
-        try {
-            await Promise.resolve();
-            // Create the object described by options.structure at options.path.
-        } catch (error) {
-            throw normalizeToError(error);
-        } finally {
-            this.abortController = undefined;
-        }
-    }
-
-    // Describe the connection (no sibling reference implementation exists yet — stub follows the same shape as the rest)
-    async describeConnection(options: DescribeConnectionOptions): Promise<{ descriptionConfig: ConnectionDescriptionConfig }> {
-        this.abortController = new AbortController();
-
-        try {
-            await Promise.resolve();
-            return { descriptionConfig: {} as ConnectionDescriptionConfig };
-        } catch (error) {
-            throw normalizeToError(error);
-        } finally {
-            this.abortController = undefined;
-        }
-    }
-
-    // Drop (delete) the object at the specified path — see dpuse-connector-dexie-js for a fuller reference
-    // eslint-disable-next-line sonarjs/no-identical-functions -- placeholder stub, implement per action before shipping
-    async dropObject(options: DropObjectOptions): Promise<void> {
-        this.abortController = new AbortController();
-
-        try {
-            await Promise.resolve();
-            // Drop the object at options.path.
         } catch (error) {
             throw normalizeToError(error);
         } finally {
@@ -146,27 +128,55 @@ export class Connector implements ConnectorInterface {
         }
     }
 
-    // Get a single record from the specified object node — see dpuse-connector-dexie-js for a fuller reference
-    async getRecord(options: GetRecordOptions): Promise<GetRecordResult> {
-        this.abortController = new AbortController();
-
-        try {
-            await Promise.resolve();
-            return {};
-        } catch (error) {
-            throw normalizeToError(error);
-        } finally {
-            this.abortController = undefined;
-        }
-    }
-
-    // Lists all nodes (folders and objects) in the specified folder path — see any sibling connector for a fuller reference
+    // Lists providers, datasets, or series depending on folder depth: "" -> providers, "/{provider}" -> datasets,
+    // "/{provider}/{dataset}" -> series. Fetches exactly one page per call (options.limit/offset passed straight
+    // through to DBnomics); the caller drives further pages via the returned cursor/isMore/totalCount.
     async listNodes(options: ListNodesOptions): Promise<ListNodesResult> {
-        this.abortController = new AbortController();
+        const { signal } = (this.abortController = new AbortController());
 
         try {
-            await Promise.resolve();
-            return { cursor: undefined, connectionNodeConfigs: [], isMore: false, totalCount: 0 };
+            const folderPathSegments = options.folderPath.split('/');
+            if (folderPathSegments[0] != '') throw new Error(`${ERROR_INVALID_FOLDER_PATH} '${options.folderPath}'.`); // Invalid folder path if characters ahead of first separator.
+            const limit = options.limit ?? DEFAULT_PAGE_SIZE;
+            const offset = options.offset ?? 0;
+            const pageQuery = `limit=${String(limit)}&offset=${String(offset)}`;
+
+            switch (folderPathSegments.length) {
+                case 1: {
+                    // Return list of provider nodes.
+                    const url = `${API_BASE_URL}/providers?${pageQuery}`;
+                    const data = await this.fetchCachedJson<ProvidersResponse>(url, signal);
+                    const connectionNodeConfigs = data.providers.docs.map((provider) =>
+                        constructFolderNodeConfig(options.folderPath, provider.code, provider.name, undefined)
+                    );
+                    return buildListNodesResult(connectionNodeConfigs, offset, data.providers.num_found);
+                }
+                case 2: {
+                    const providerCode = folderPathSegments[1];
+                    if (!providerCode) throw new Error(`${ERROR_INVALID_FOLDER_PATH} '${options.folderPath}'.`); // Invalid folder path if no provider code.
+                    // Return list of dataset nodes for the provider.
+                    const url = `${API_BASE_URL}/datasets/${providerCode}?${pageQuery}`;
+                    const data = await this.fetchCachedJson<DatasetsResponse>(url, signal);
+                    const connectionNodeConfigs = data.datasets.docs.map((dataset) =>
+                        constructFolderNodeConfig(options.folderPath, dataset.code, dataset.name, dataset.nb_series)
+                    );
+                    return buildListNodesResult(connectionNodeConfigs, offset, data.datasets.num_found);
+                }
+                case 3: {
+                    const providerCode = folderPathSegments[1];
+                    const datasetCode = folderPathSegments[2];
+                    if (!providerCode || !datasetCode) throw new Error(`${ERROR_INVALID_FOLDER_PATH} '${options.folderPath}'.`); // Invalid folder path if no provider/dataset code.
+                    // Return list of series (leaf) nodes for the dataset.
+                    const url = `${API_BASE_URL}/series/${providerCode}/${datasetCode}?${pageQuery}`;
+                    const data = await this.fetchCachedJson<SeriesListResponse>(url, signal);
+                    const connectionNodeConfigs = data.series.docs.map((series) =>
+                        constructObjectNodeConfig(options.folderPath, series.series_code, series.series_name)
+                    );
+                    return buildListNodesResult(connectionNodeConfigs, offset, data.series.num_found);
+                }
+                default:
+                    throw new Error(`${ERROR_INVALID_FOLDER_PATH} '${options.folderPath}'.`);
+            }
         } catch (error) {
             throw normalizeToError(error);
         } finally {
@@ -181,35 +191,6 @@ export class Connector implements ConnectorInterface {
         try {
             await Promise.resolve();
             return {} as PreviewConfig;
-        } catch (error) {
-            throw normalizeToError(error);
-        } finally {
-            this.abortController = undefined;
-        }
-    }
-
-    // Remove one or more records from the specified object node — see dpuse-connector-dexie-js for a fuller reference
-    // eslint-disable-next-line sonarjs/no-identical-functions -- placeholder stub, implement per action before shipping
-    async removeRecords(options: RemoveRecordsOptions): Promise<void> {
-        this.abortController = new AbortController();
-
-        try {
-            await Promise.resolve();
-            // Remove options.keys from the object at options.path.
-        } catch (error) {
-            throw normalizeToError(error);
-        } finally {
-            this.abortController = undefined;
-        }
-    }
-
-    // Retrieve all chunks from the specified object node (no sibling reference implementation exists yet)
-    async retrieveChunks(options: RetrieveChunksOptions, chunk: (data: Uint8Array) => void, complete: () => void): Promise<void> {
-        this.abortController = new AbortController();
-
-        try {
-            await Promise.resolve();
-            complete();
         } catch (error) {
             throw normalizeToError(error);
         } finally {
@@ -235,18 +216,76 @@ export class Connector implements ConnectorInterface {
         }
     }
 
-    // Upsert one or more records into the specified object node — see dpuse-connector-dexie-js for a fuller reference
-    // eslint-disable-next-line sonarjs/no-identical-functions -- placeholder stub, implement per action before shipping
-    async upsertRecords(options: UpsertRecordsOptions): Promise<void> {
-        this.abortController = new AbortController();
+    // Helpers (instance) ──────────────────────────────────────────────────────────────────────────────────────────────
 
-        try {
-            await Promise.resolve();
-            // Upsert options.records into the object at options.path.
-        } catch (error) {
-            throw normalizeToError(error);
-        } finally {
-            this.abortController = undefined;
+    // Fetch JSON from the given URL, serving from the instance-scoped cache when a non-expired entry exists. Cache
+    // keys are full request URLs (path + query), so distinct limit/offset pages are cached independently and only
+    // pages actually browsed are ever held in memory.
+    private async fetchCachedJson<T>(url: string, signal: AbortSignal): Promise<T> {
+        const cached = this.responseCache.get(url);
+        if (cached && cached.expiresAt > Date.now()) {
+            this.responseCache.delete(url); // Re-insert to mark as most-recently-used (Map preserves insertion order).
+            this.responseCache.set(url, cached);
+            return cached.value as T;
         }
+
+        const response = await fetch(url, { signal });
+        if (!response.ok)
+            throw new ConnectorError(`DBnomics request to '${url}' failed with status ${String(response.status)}.`, 'dpuse-connector-dbnomics.index.fetchCachedJson');
+        const value = (await response.json()) as T;
+
+        this.responseCache.delete(url);
+        this.responseCache.set(url, { expiresAt: Date.now() + CACHE_TTL_MS, value });
+        if (this.responseCache.size > CACHE_MAX_ENTRIES) {
+            const oldestKey = this.responseCache.keys().next().value;
+            if (oldestKey !== undefined) this.responseCache.delete(oldestKey);
+        }
+
+        return value;
     }
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+// Construct a folder node configuration for a provider or dataset.
+function constructFolderNodeConfig(folderPath: string, code: string, name: string, childCount: number | undefined): ConnectionNodeConfig {
+    return {
+        childCount,
+        childNodes: [],
+        extension: undefined,
+        folderPath,
+        handle: undefined,
+        id: code, // DBnomics codes are stable, unique, natural keys — reused as-is rather than a random id.
+        label: name,
+        lastModifiedAt: undefined,
+        mimeType: undefined,
+        name: code,
+        size: undefined,
+        typeId: 'folder'
+    };
+}
+
+// Construct an object (leaf) node configuration for a series.
+function constructObjectNodeConfig(folderPath: string, code: string, name: string): ConnectionNodeConfig {
+    return {
+        childCount: undefined,
+        childNodes: [],
+        extension: undefined,
+        folderPath,
+        handle: undefined,
+        id: code,
+        label: name,
+        lastModifiedAt: undefined,
+        mimeType: undefined,
+        name: code,
+        size: undefined,
+        typeId: 'object'
+    };
+}
+
+// Compute the cursor/isMore/totalCount for a single page of DBnomics results.
+function buildListNodesResult(connectionNodeConfigs: ConnectionNodeConfig[], offset: number, numberFound: number): ListNodesResult {
+    const nextOffset = offset + connectionNodeConfigs.length;
+    const isMore = nextOffset < numberFound;
+    return { cursor: isMore ? nextOffset : undefined, connectionNodeConfigs, isMore, totalCount: numberFound };
 }

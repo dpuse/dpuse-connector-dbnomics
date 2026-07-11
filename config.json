@@ -11,18 +11,11 @@
     "actionNames": [
         "abortOperation",
         "auditObjectContent",
-        "createObject",
-        "describeConnection",
-        "dropObject",
         "findObject",
         "getReadableStream",
-        "getRecord",
         "listNodes",
         "previewObject",
-        "removeRecords",
-        "retrieveChunks",
-        "retrieveRecords",
-        "upsertRecords"
+        "retrieveRecords"
     ],
     "category": null,
     "categoryId": "curatedDataset",
@@ -42,5 +35,5 @@
     "vendorAccountURL": null,
     "vendorDocumentationURL": null,
     "vendorHomeURL": null,
-    "version": "0.0.13"
+    "version": "0.0.14"
 }

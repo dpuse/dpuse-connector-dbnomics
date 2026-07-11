@@ -26,24 +26,24 @@ Template scaffold for building new DPUse connectors. Replace this description, a
 
 Connectors conform to a unified interface contract by implementing a specific subset of standard actions. These standardised actions allow the DPUse application to interact with any underlying data source in the same way, enabling Connectors to be built independently and loaded dynamically at runtime.
 
-This connector is a Bidirectional connector that supports both read and write actions. Connectors can also function as a Source (read-only) or Destination (write-only), depending on the actions they support. The table below lists all connector actions and highlights those supported by this connector.
+This connector is a Source connector that supports only read actions. Connectors can also function as a Destination (write-only) or Bidirectional (read/write), depending on the actions they support. The table below lists all connector actions and highlights those supported by this connector.
 
 |Action|Supported|
 |:----|:-------:|
 | Abort Operation | ✓ |
 | Audit Object Content | ✓ |
-| Create Object | ✓ |
-| Describe Connection | ✓ |
-| Drop Object | ✓ |
+| Create Object |  |
+| Describe Connection |  |
+| Drop Object |  |
 | Find Object | ✓ |
 | Get Readable Stream | ✓ |
-| Get Record | ✓ |
+| Get Record |  |
 | List Nodes | ✓ |
 | Preview Object | ✓ |
-| Remove Records | ✓ |
-| Retrieve Chunks | ✓ |
+| Remove Records |  |
+| Retrieve Chunks |  |
 | Retrieve Records | ✓ |
-| Upsert Records | ✓ |
+| Upsert Records |  |
 
 <!-- CONNECTOR_ACTIONS_END -->
 
@@ -97,10 +97,10 @@ _Note: Sonda's Vite reports currently exclude CSS files, since Vite does not gen
 
 |Chunk/Module/File|Composition|
 |:------ |:-----------|
-| dist/dpuse-connector-dbnomics.es.js | 5.2 kB · brotli 1.3 kB |
-| &nbsp;&nbsp;&nbsp;&nbsp;src → index.ts | `██████████░░░░░░░░░░` 52.5% |
-| &nbsp;&nbsp;&nbsp;&nbsp;(unassigned) → [unassigned] | `████████░░░░░░░░░░░░` 39.3% |
-| &nbsp;&nbsp;&nbsp;&nbsp;@dpuse/dpuse-shared → dist/dpuse-shared-errors.es.js | `██░░░░░░░░░░░░░░░░░░` 8.2% |
+| dist/dpuse-connector-dbnomics.es.js | 6.3 kB · brotli 2.0 kB |
+| &nbsp;&nbsp;&nbsp;&nbsp;src → index.ts | `████████████░░░░░░░░` 58.8% |
+| &nbsp;&nbsp;&nbsp;&nbsp;(unassigned) → [unassigned] | `██████░░░░░░░░░░░░░░` 30.5% |
+| &nbsp;&nbsp;&nbsp;&nbsp;@dpuse/dpuse-shared → dist/dpuse-shared-errors.es.js | `██░░░░░░░░░░░░░░░░░░` 10.7% |
 
 <!-- BUNDLE_END -->
 

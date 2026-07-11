@@ -1,6 +1,6 @@
 {
     "name": "@dpuse/dpuse-connector-dbnomics",
-    "version": "0.0.13",
+    "version": "0.0.14",
     "private": false,
     "description": "Template scaffold for building new DPUse connectors.",
     "license": "MIT",
@@ -60,16 +60,16 @@
         "@dpuse/dpuse-shared": "^0.3.737"
     },
     "devDependencies": {
-        "@dpuse/dpuse-development": "^0.3.684",
-        "@dpuse/eslint-config-dpuse": "^1.0.108",
+        "@dpuse/dpuse-development": "^0.3.686",
+        "@dpuse/eslint-config-dpuse": "^1.0.113",
         "@types/node": "^26.1.1",
-        "eslint": "^10.6.0",
-        "prettier": "^3.9.4",
+        "eslint": "^10.7.0",
+        "prettier": "^3.9.5",
         "sonda": "^0.14.0",
         "typescript": "^6.0.3",
         "vite": "^8.1.4",
         "vite-plugin-dts": "^5.0.3",
         "vitest": "^4.1.10",
-        "wrangler": "^4.109.0"
+        "wrangler": "^4.110.0"
     }
 }
