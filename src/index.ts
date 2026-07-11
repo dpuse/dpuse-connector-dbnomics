@@ -55,6 +55,7 @@ interface SeriesListResponse {
 // ── Constants ────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 const API_BASE_URL = 'https://api.db.nomics.world/v22';
+const PROXY_URL = 'https://api.dpuse.app/proxy';
 const CACHE_MAX_ENTRIES = 200; // Bounds memory for long browsing sessions; oldest page evicted once exceeded.
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour.
 const DEFAULT_PAGE_SIZE = 100;
@@ -229,7 +230,12 @@ export class Connector implements ExtendedConnectorInterface {
             return cached.value as T;
         }
 
-        const response = await fetch(url, { signal });
+        const response = await fetch(PROXY_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ method: 'GET', url }),
+            signal
+        });
         if (!response.ok)
             throw new ConnectorError(`DBnomics request to '${url}' failed with status ${String(response.status)}.`, 'dpuse-connector-dbnomics.index.fetchCachedJson');
         const value = (await response.json()) as T;
