@@ -52,6 +52,10 @@ interface SeriesListResponse {
     series: DBnomicsPage<{ series_code: string; series_name: string }>;
 }
 
+interface SeriesObservationsResponse {
+    series: DBnomicsPage<{ series_code: string; series_name: string; period: string[]; value: (number | null)[] }>;
+}
+
 // ── Constants ────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 const API_BASE_URL = 'https://api.db.nomics.world/v22';
@@ -60,6 +64,8 @@ const CACHE_MAX_ENTRIES = 200; // Bounds memory for long browsing sessions; olde
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour.
 const DEFAULT_PAGE_SIZE = 100;
 const ERROR_INVALID_FOLDER_PATH = 'Encountered invalid folder path';
+const ERROR_INVALID_OBJECT_PATH = 'Encountered invalid object path';
+const PREVIEW_ROW_LIMIT = 50; // Matches dpuse-connector-dexie-js's previewObject row limit.
 
 // ── Connectors ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -185,13 +191,49 @@ export class Connector implements ExtendedConnectorInterface {
         }
     }
 
-    // Preview the contents of the object node with the specified path — see dpuse-connector-dropbox for a fuller reference
+    // Preview a series' observations — see dpuse-connector-dexie-js's previewObject for the reference pattern this
+    // follows: fetch the series once, then keep only the first PREVIEW_ROW_LIMIT rows for a quick look rather than
+    // returning the full observation history. DBnomics has no server-side "first N observations" query param, so the
+    // full series is fetched (small; a decades-long series is only a few KB) and truncated client-side.
     async previewObject(options: PreviewObjectOptions): Promise<PreviewConfig> {
-        this.abortController = new AbortController();
+        const { signal } = (this.abortController = new AbortController());
 
         try {
-            await Promise.resolve();
-            return {} as PreviewConfig;
+            const startedAt = performance.now();
+            const { providerCode, datasetCode, seriesCode } = establishSeriesIdentifiers(options.path);
+
+            const url = `${API_BASE_URL}/series/${providerCode}/${datasetCode}/${seriesCode}?observations=1`;
+            const data = await this.fetchCachedJson<SeriesObservationsResponse>(url, signal);
+            const series = data.series.docs[0];
+            if (!series) throw new Error(`Series '${options.path}' not found.`);
+
+            const headerRecord: ParsingRecord = [
+                { value: 'period', valueWasQuoted: false },
+                { value: 'value', valueWasQuoted: false }
+            ];
+            const dataRecords: ParsingRecord[] = series.period.slice(0, PREVIEW_ROW_LIMIT).map((period, index) => [
+                { value: period, valueWasQuoted: false },
+                { value: series.value[index] == null ? null : String(series.value[index]), valueWasQuoted: false }
+            ]);
+            const parsedRecords = [headerRecord, ...dataRecords];
+            const inferenceSummary = this.connectorUtilities.inferDataTypes(parsedRecords);
+
+            return {
+                asAt: Date.now(),
+                columnConfigs: inferenceSummary.columnConfigs,
+                dataFormatId: 'json',
+                duration: performance.now() - startedAt,
+                encodingConfidenceLevel: undefined,
+                encodingId: undefined,
+                fileType: undefined,
+                hasHeaders: inferenceSummary.hasHeaderRow,
+                inferenceRecords: inferenceSummary.typedRecords,
+                parsedRecords,
+                recordDelimiterId: undefined,
+                size: undefined,
+                text: undefined,
+                valueDelimiterId: undefined
+            };
         } catch (error) {
             throw normalizeToError(error);
         } finally {
@@ -230,6 +272,9 @@ export class Connector implements ExtendedConnectorInterface {
             return cached.value as T;
         }
 
+        // TODO: No auth header sent — dpuse-api's /proxy route currently has no auth guard since connectors have no
+        // session token to send (see ConnectorUtilities in dpuse-shared). Add an Authorization header here once a
+        // token (or authenticated fetch) is threaded through to connectors, and re-add verifyAuthorisationToken on /proxy.
         const response = await fetch(PROXY_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -252,6 +297,14 @@ export class Connector implements ExtendedConnectorInterface {
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+// Split an object path ("/{provider}/{dataset}/{seriesCode}") into its three identifiers.
+function establishSeriesIdentifiers(path: string): { providerCode: string; datasetCode: string; seriesCode: string } {
+    const pathSegments = path.split('/');
+    const [, providerCode, datasetCode, seriesCode] = pathSegments;
+    if (pathSegments.length !== 4 || !providerCode || !datasetCode || !seriesCode) throw new Error(`${ERROR_INVALID_OBJECT_PATH} '${path}'.`);
+    return { providerCode, datasetCode, seriesCode };
+}
 
 // Construct a folder node configuration for a provider or dataset.
 function constructFolderNodeConfig(folderPath: string, code: string, name: string, childCount: number | undefined): ConnectionNodeConfig {
