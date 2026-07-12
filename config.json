@@ -12,6 +12,7 @@
         "abortOperation",
         "auditObjectContent",
         "findObject",
+        "getInfo",
         "getReadableStream",
         "listNodes",
         "previewObject",
@@ -35,5 +36,5 @@
     "vendorAccountURL": "https://db.nomics.world/login",
     "vendorDocumentationURL": "https://docs.db.nomics.world/",
     "vendorHomeURL": "https://db.nomics.world/",
-    "version": "0.0.20"
+    "version": "0.0.22"
 }

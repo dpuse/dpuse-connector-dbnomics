@@ -1,6 +1,6 @@
 {
     "name": "@dpuse/dpuse-connector-dbnomics",
-    "version": "0.0.20",
+    "version": "0.0.22",
     "private": false,
     "description": "Provides access to economic data hosted by DBnomics.",
     "license": "MIT",
@@ -45,7 +45,7 @@
         "document": "npm run documentOpening && npm run documentActions && npm run documentUsage && npm run documentDependencies && npm run documentGovernance",
         "documentActions": "node -e \"import('@dpuse/dpuse-development').then(m => m.documentActions())\"",
         "documentBundleSizes": "node -e \"import('@dpuse/dpuse-development').then(m => m.documentBundleSizes())\"",
-        "documentDependencies": "node -e \"import('@dpuse/dpuse-development').then(m => m.documentDependencies('BSD-3-Clause;MIT'))\"",
+        "documentDependencies": "node -e \"import('@dpuse/dpuse-development').then(m => m.documentDependencies('MIT'))\"",
         "documentGovernance": "node -e \"import('@dpuse/dpuse-development').then(m => m.documentGovernance())\"",
         "documentOpening": "node -e \"import('@dpuse/dpuse-development').then(m => m.documentOpening())\"",
         "documentUsage": "node -e \"import('@dpuse/dpuse-development').then(m => m.documentUsage())\"",
@@ -57,10 +57,10 @@
         "test": "node -e \"import('@dpuse/dpuse-development').then(m => m.testProject())\""
     },
     "dependencies": {
-        "@dpuse/dpuse-shared": "^0.3.737"
+        "@dpuse/dpuse-shared": "^0.3.740"
     },
     "devDependencies": {
-        "@dpuse/dpuse-development": "^0.3.686",
+        "@dpuse/dpuse-development": "^0.3.687",
         "@dpuse/eslint-config-dpuse": "^1.0.113",
         "@types/node": "^26.1.1",
         "eslint": "^10.7.0",

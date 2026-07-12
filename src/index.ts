@@ -9,6 +9,8 @@ import type {
     ConnectorUtilities,
     FindObjectOptions,
     FindObjectResult,
+    GetInfoOptions,
+    GetInfoResult,
     GetReadableStreamOptions,
     ListNodesOptions,
     ListNodesResult,
@@ -64,6 +66,15 @@ interface CategoryTreeNode {
 
 interface ProviderCategoryTreeResponse {
     category_tree: CategoryTreeNode[] | undefined;
+    provider: Record<string, unknown>;
+}
+
+interface DatasetInfoResponse {
+    datasets: DBnomicsPage<Record<string, unknown>>;
+}
+
+interface SeriesInfoResponse {
+    series: DBnomicsPage<Record<string, unknown>>;
 }
 
 type ResolvedCategoryNode = { kind: 'category'; nodes: CategoryTreeNode[] } | { kind: 'dataset'; code: string; name: string };
@@ -135,6 +146,44 @@ export class Connector implements ExtendedConnectorInterface {
         }
     }
 
+    // Get metadata for the node at the specified path — provider, category, dataset, or series. Returns DBnomics'
+    // own response object as-is (unshaped) until a common cross-provider info shape has been reviewed. Modelled on
+    // previewObject: resolve the path once, fetch (or reuse the already-cached) metadata, no row-truncation needed
+    // since this is metadata, not observation data. Path resolution itself is delegated to resolveGetInfoTarget,
+    // the same style split used for listNodes/resolveCategoryTreeNode.
+    async getInfo(options: GetInfoOptions): Promise<GetInfoResult> {
+        const { signal } = (this.abortController = new AbortController());
+
+        try {
+            const pathSegments = options.path.split('/');
+            if (pathSegments[0] != '') throw new Error(`${ERROR_INVALID_OBJECT_PATH} '${options.path}'.`); // Invalid path if characters ahead of first separator.
+            const providerCode = pathSegments[1];
+            if (!providerCode) throw new Error(`${ERROR_INVALID_OBJECT_PATH} '${options.path}'.`); // Invalid path if no provider code.
+            const remainingSegments = pathSegments.slice(2);
+
+            // Fetch once whether the path is "just" the provider (info comes from this response's `provider` key)
+            // or goes deeper (this response's `category_tree` is needed to interpret the remaining segments).
+            const treeData = await this.fetchCachedJson<ProviderCategoryTreeResponse>(`${API_BASE_URL}/providers/${providerCode}`, signal);
+            if (remainingSegments.length === 0) return { info: treeData.provider };
+
+            const target = resolveGetInfoTarget(treeData.category_tree, remainingSegments, options.path);
+            switch (target.kind) {
+                case 'category':
+                    return { info: target.node as unknown as Record<string, unknown> };
+                case 'dataset':
+                    return { info: await this.fetchDatasetInfo(providerCode, target.datasetCode, signal) };
+                case 'series':
+                    return { info: await this.fetchSeriesInfo(providerCode, target.datasetCode, target.seriesCode, signal) };
+                default:
+                    throw new Error(`${ERROR_INVALID_OBJECT_PATH} '${options.path}'.`);
+            }
+        } catch (error) {
+            throw normalizeToError(error);
+        } finally {
+            this.abortController = undefined;
+        }
+    }
+
     // Get a readable stream for the specified object node path — see dpuse-connector-dropbox for a fuller reference
     async getReadableStream(options: GetReadableStreamOptions): Promise<ReadableStream<Uint8Array>> {
         this.abortController = new AbortController();
@@ -169,9 +218,7 @@ export class Connector implements ExtendedConnectorInterface {
                 // Return list of provider nodes.
                 const url = `${API_BASE_URL}/providers?${pageQuery}`;
                 const data = await this.fetchCachedJson<ProvidersResponse>(url, signal);
-                const connectionNodeConfigs = data.providers.docs.map((provider) =>
-                    constructFolderNodeConfig(options.folderPath, provider.code, provider.name, undefined)
-                );
+                const connectionNodeConfigs = data.providers.docs.map((provider) => constructFolderNodeConfig(options.folderPath, provider.code, provider.name, undefined));
                 return buildListNodesResult(connectionNodeConfigs, offset, data.providers.num_found);
             }
 
@@ -188,9 +235,7 @@ export class Connector implements ExtendedConnectorInterface {
                 if (categorySegments.length > 0) throw new Error(`${ERROR_INVALID_FOLDER_PATH} '${options.folderPath}'.`);
                 const url = `${API_BASE_URL}/datasets/${providerCode}?${pageQuery}`;
                 const data = await this.fetchCachedJson<DatasetsResponse>(url, signal);
-                const connectionNodeConfigs = data.datasets.docs.map((dataset) =>
-                    constructFolderNodeConfig(options.folderPath, dataset.code, dataset.name, dataset.nb_series)
-                );
+                const connectionNodeConfigs = data.datasets.docs.map((dataset) => constructFolderNodeConfig(options.folderPath, dataset.code, dataset.name, dataset.nb_series));
                 return buildListNodesResult(connectionNodeConfigs, offset, data.datasets.num_found);
             }
 
@@ -200,9 +245,7 @@ export class Connector implements ExtendedConnectorInterface {
                 // Return list of series (leaf) nodes for the resolved dataset.
                 const url = `${API_BASE_URL}/series/${providerCode}/${resolved.code}?${pageQuery}`;
                 const data = await this.fetchCachedJson<SeriesListResponse>(url, signal);
-                const connectionNodeConfigs = data.series.docs.map((series) =>
-                    constructObjectNodeConfig(options.folderPath, series.series_code, series.series_name)
-                );
+                const connectionNodeConfigs = data.series.docs.map((series) => constructObjectNodeConfig(options.folderPath, series.series_code, series.series_name));
                 return buildListNodesResult(connectionNodeConfigs, offset, data.series.num_found);
             }
 
@@ -313,8 +356,7 @@ export class Connector implements ExtendedConnectorInterface {
             body: JSON.stringify({ method: 'GET', url }),
             signal
         });
-        if (!response.ok)
-            throw new ConnectorError(`DBnomics request to '${url}' failed with status ${String(response.status)}.`, 'dpuse-connector-dbnomics.index.fetchCachedJson');
+        if (!response.ok) throw new ConnectorError(`DBnomics request to '${url}' failed with status ${String(response.status)}.`, 'dpuse-connector-dbnomics.index.fetchCachedJson');
         const value = (await response.json()) as T;
 
         this.responseCache.delete(url);
@@ -342,6 +384,24 @@ export class Connector implements ExtendedConnectorInterface {
             if (offset >= data.datasets.num_found || data.datasets.docs.length === 0) break;
         }
         return nbSeriesByCode;
+    }
+
+    // Fetch a single dataset's full metadata (description, notes, dimensions, etc.) — a richer response than the
+    // {code, name, nb_series} slice used for listing, for getInfo.
+    private async fetchDatasetInfo(providerCode: string, datasetCode: string, signal: AbortSignal): Promise<Record<string, unknown>> {
+        const data = await this.fetchCachedJson<DatasetInfoResponse>(`${API_BASE_URL}/datasets/${providerCode}/${datasetCode}`, signal);
+        const dataset = data.datasets.docs[0];
+        if (!dataset) throw new Error(`Dataset '${providerCode}/${datasetCode}' not found.`);
+        return dataset;
+    }
+
+    // Fetch a single series' metadata (no `observations=1` — this is for getInfo, not previewObject, so period/value
+    // arrays aren't needed).
+    private async fetchSeriesInfo(providerCode: string, datasetCode: string, seriesCode: string, signal: AbortSignal): Promise<Record<string, unknown>> {
+        const data = await this.fetchCachedJson<SeriesInfoResponse>(`${API_BASE_URL}/series/${providerCode}/${datasetCode}/${seriesCode}`, signal);
+        const series = data.series.docs[0];
+        if (!series) throw new Error(`Series '${providerCode}/${datasetCode}/${seriesCode}' not found.`);
+        return series;
     }
 }
 
@@ -372,6 +432,60 @@ function resolveCategoryTreeNode(nodes: CategoryTreeNode[], segments: string[], 
         }
     }
     return { kind: 'category', nodes: currentNodes };
+}
+
+// Walk segments through the category tree, returning the node found at the end (a category-with-children, or a
+// dataset leaf) — unlike resolveCategoryTreeNode, which resolves to "the children of this path" (for listNodes),
+// this resolves to "the node at this path itself" (for getInfo). Returns undefined if any segment doesn't match.
+function findCategoryTreeNode(nodes: CategoryTreeNode[], segments: string[]): CategoryTreeNode | undefined {
+    let currentNodes = nodes;
+    let found: CategoryTreeNode | undefined;
+    for (const segment of segments) {
+        found = currentNodes.find((node) => resolveCategoryNodeCode(node) === segment);
+        if (!found) return undefined;
+        currentNodes = found.children ?? [];
+    }
+    return found;
+}
+
+type GetInfoTarget = { kind: 'category'; node: CategoryTreeNode } | { kind: 'dataset'; datasetCode: string } | { kind: 'series'; datasetCode: string; seriesCode: string };
+
+// Resolve a getInfo path's remaining segments for a flat provider (no category_tree, mirroring listNodes' own
+// fallback): [datasetCode] or [datasetCode, seriesCode].
+function resolveFlatGetInfoTarget(remainingSegments: string[], path: string): GetInfoTarget {
+    if (remainingSegments.length === 1) {
+        const datasetCode = remainingSegments[0];
+        if (datasetCode) return { kind: 'dataset', datasetCode };
+    } else if (remainingSegments.length === 2) {
+        const [datasetCode, seriesCode] = remainingSegments;
+        if (datasetCode && seriesCode) return { kind: 'series', datasetCode, seriesCode };
+    }
+    throw new Error(`${ERROR_INVALID_OBJECT_PATH} '${path}'.`);
+}
+
+// Resolve the segments of a getInfo path (after the provider) against a provider's category tree (or, if the
+// provider has no tree, against the flat [datasetCode] / [datasetCode, seriesCode] shape listNodes falls back to).
+function resolveGetInfoTarget(categoryTree: CategoryTreeNode[] | undefined, remainingSegments: string[], path: string): GetInfoTarget {
+    if (!categoryTree || categoryTree.length === 0) return resolveFlatGetInfoTarget(remainingSegments, path);
+
+    // Try resolving the full segments directly against the tree first -- a category or a dataset.
+    const directNode = findCategoryTreeNode(categoryTree, remainingSegments);
+    if (directNode) {
+        if (directNode.children) return { kind: 'category', node: directNode };
+        if (directNode.code == null) throw new Error(`Encountered dataset '${directNode.name}' with no code at '${path}'.`);
+        return { kind: 'dataset', datasetCode: directNode.code };
+    }
+
+    // Otherwise, the last segment may be a series code sitting under a resolved dataset leaf.
+    if (remainingSegments.length >= 2) {
+        const datasetNode = findCategoryTreeNode(categoryTree, remainingSegments.slice(0, -1));
+        const seriesCode = remainingSegments.at(-1);
+        if (datasetNode && !datasetNode.children && datasetNode.code != null && seriesCode) {
+            return { kind: 'series', datasetCode: datasetNode.code, seriesCode };
+        }
+    }
+
+    throw new Error(`${ERROR_INVALID_OBJECT_PATH} '${path}'.`);
 }
 
 // Split an object path ("/{provider}/{...categorySegments}/{dataset}/{seriesCode}") into the three identifiers a

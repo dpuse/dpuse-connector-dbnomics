@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Connector } from '@/index';
-import type { ConnectorUtilities, ListNodesOptions, PreviewObjectOptions } from '@dpuse/dpuse-shared/component/module/connector';
+import type { ConnectorUtilities, GetInfoOptions, ListNodesOptions, PreviewObjectOptions } from '@dpuse/dpuse-shared/component/module/connector';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -319,6 +319,118 @@ describe('Connector', () => {
             vi.stubGlobal('fetch', vi.fn().mockResolvedValue(buildFetchResponse({ series: { docs: [], num_found: 0 } })));
             const connector = new Connector(buildConnectorUtilities(), []);
             await expect(connector.previewObject({ path: '/IMF/AFRREO/UNKNOWN' } as PreviewObjectOptions)).rejects.toThrow(/not found/i);
+        });
+    });
+
+    describe('getInfo', () => {
+        afterEach(() => {
+            vi.unstubAllGlobals();
+        });
+
+        it('returns the provider metadata for a bare provider path', async () => {
+            const providerInfo = { code: 'IMF', name: 'International Monetary Fund', region: 'World' };
+            const fetchMock = buildRoutedFetchMock({
+                'https://api.db.nomics.world/v22/providers/IMF': { category_tree: [], provider: providerInfo }
+            });
+            vi.stubGlobal('fetch', fetchMock);
+
+            const connector = new Connector({} as never, []);
+            const result = await connector.getInfo({ path: '/IMF' } as GetInfoOptions);
+
+            expect(result.info).toEqual(providerInfo);
+        });
+
+        it('returns the raw category node for a path resolving to a category', async () => {
+            const fetchMock = buildRoutedFetchMock({
+                'https://api.db.nomics.world/v22/providers/INSEE': {
+                    category_tree: [{ code: 'ECO', name: 'Economy', doc_href: 'https://example.com/eco', children: [{ code: 'GEN', name: 'General' }] }]
+                }
+            });
+            vi.stubGlobal('fetch', fetchMock);
+
+            const connector = new Connector({} as never, []);
+            const result = await connector.getInfo({ path: '/INSEE/ECO' } as GetInfoOptions);
+
+            expect(result.info).toEqual({ code: 'ECO', name: 'Economy', doc_href: 'https://example.com/eco', children: [{ code: 'GEN', name: 'General' }] });
+        });
+
+        it('returns full dataset metadata for a path resolving to a dataset leaf via category_tree', async () => {
+            const datasetInfo = { code: 'CNA-2010-PIB', name: 'GDP', description: 'Gross domestic product', nb_series: 42 };
+            const fetchMock = buildRoutedFetchMock({
+                'https://api.db.nomics.world/v22/providers/INSEE': {
+                    category_tree: [{ code: 'ECO', name: 'Economy', children: [{ code: 'CNA-2010-PIB', name: 'GDP' }] }]
+                },
+                'https://api.db.nomics.world/v22/datasets/INSEE/CNA-2010-PIB': { datasets: { docs: [datasetInfo], limit: 1, offset: 0, num_found: 1 } }
+            });
+            vi.stubGlobal('fetch', fetchMock);
+
+            const connector = new Connector({} as never, []);
+            const result = await connector.getInfo({ path: '/INSEE/ECO/CNA-2010-PIB' } as GetInfoOptions);
+
+            expect(result.info).toEqual(datasetInfo);
+        });
+
+        it('returns series metadata (no observations) for a path one segment past a resolved dataset leaf', async () => {
+            const seriesInfo = { series_code: 'A.FR.PIB', series_name: 'French GDP', dimensions: { GEO: 'FR' } };
+            const fetchMock = buildRoutedFetchMock({
+                'https://api.db.nomics.world/v22/providers/INSEE': {
+                    category_tree: [{ code: 'ECO', name: 'Economy', children: [{ code: 'CNA-2010-PIB', name: 'GDP' }] }]
+                },
+                'https://api.db.nomics.world/v22/series/INSEE/CNA-2010-PIB/A.FR.PIB': { series: { docs: [seriesInfo], limit: 1, offset: 0, num_found: 1 } }
+            });
+            vi.stubGlobal('fetch', fetchMock);
+
+            const connector = new Connector({} as never, []);
+            const result = await connector.getInfo({ path: '/INSEE/ECO/CNA-2010-PIB/A.FR.PIB' } as GetInfoOptions);
+
+            expect(result.info).toEqual(seriesInfo);
+        });
+
+        it('falls back to the flat dataset/series shape when category_tree is empty', async () => {
+            const datasetInfo = { code: 'AFRREO', name: 'Sub-Saharan Africa', nb_series: 1654 };
+            const seriesInfo = { series_code: 'A.NGDP', series_name: 'GDP' };
+            const fetchMock = buildRoutedFetchMock({
+                'https://api.db.nomics.world/v22/providers/IMF': { category_tree: [] },
+                'https://api.db.nomics.world/v22/datasets/IMF/AFRREO': { datasets: { docs: [datasetInfo], limit: 1, offset: 0, num_found: 1 } },
+                'https://api.db.nomics.world/v22/series/IMF/AFRREO/A.NGDP': { series: { docs: [seriesInfo], limit: 1, offset: 0, num_found: 1 } }
+            });
+            vi.stubGlobal('fetch', fetchMock);
+
+            const connector = new Connector({} as never, []);
+            const datasetResult = await connector.getInfo({ path: '/IMF/AFRREO' } as GetInfoOptions);
+            const seriesResult = await connector.getInfo({ path: '/IMF/AFRREO/A.NGDP' } as GetInfoOptions);
+
+            expect(datasetResult.info).toEqual(datasetInfo);
+            expect(seriesResult.info).toEqual(seriesInfo);
+        });
+
+        it('rejects a path that tries to descend past a resolved series', async () => {
+            const fetchMock = buildRoutedFetchMock({
+                'https://api.db.nomics.world/v22/providers/IMF': { category_tree: [] }
+            });
+            vi.stubGlobal('fetch', fetchMock);
+
+            const connector = new Connector({} as never, []);
+            await expect(connector.getInfo({ path: '/IMF/AFRREO/A.NGDP/EXTRA' } as GetInfoOptions)).rejects.toThrow(/invalid object path/i);
+        });
+
+        it('reuses the cached category_tree fetch across getInfo calls for the same provider', async () => {
+            const fetchMock = buildRoutedFetchMock({
+                'https://api.db.nomics.world/v22/providers/INSEE': {
+                    category_tree: [{ code: 'ECO', name: 'Economy', children: [{ code: 'CNA-2010-PIB', name: 'GDP' }] }],
+                    provider: { code: 'INSEE', name: 'INSEE' }
+                },
+                'https://api.db.nomics.world/v22/datasets/INSEE/CNA-2010-PIB': { datasets: { docs: [{ code: 'CNA-2010-PIB', name: 'GDP' }], limit: 1, offset: 0, num_found: 1 } }
+            });
+            vi.stubGlobal('fetch', fetchMock);
+
+            const connector = new Connector({} as never, []);
+            await connector.getInfo({ path: '/INSEE' } as GetInfoOptions);
+            await connector.getInfo({ path: '/INSEE/ECO/CNA-2010-PIB' } as GetInfoOptions);
+
+            // Two distinct URLs are fetched (provider/tree, and the dataset), each exactly once -- the second
+            // getInfo call reuses the already-cached provider/tree response rather than re-fetching it.
+            expect(fetchMock).toHaveBeenCalledTimes(2);
         });
     });
 });
