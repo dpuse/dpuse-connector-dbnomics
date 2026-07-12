@@ -150,10 +150,11 @@ export class Connector implements ExtendedConnectorInterface {
 
     // Lists providers, categories, datasets, or series depending on folder depth: "" -> providers,
     // "/{provider}/..." -> walks that provider's category_tree (arbitrary depth) until it resolves either to a
-    // category (list its immediate children) or a dataset (list its series). Fetches exactly one page per call
-    // (options.limit/offset passed straight through to DBnomics, or applied client-side when paging a category's
-    // children, which DBnomics doesn't paginate itself); the caller drives further pages via the returned
-    // cursor/isMore/totalCount.
+    // category (list its immediate children) or a dataset (list its series). Providers and series are paged
+    // through DBnomics (options.limit/offset passed straight through, one page fetched per call). Category levels
+    // are not paged: the whole tree is already in memory (one cached fetch per provider) and a category's child
+    // count is small (single/low-double digits), so options.limit/offset are ignored there and every child is
+    // returned in one response.
     async listNodes(options: ListNodesOptions): Promise<ListNodesResult> {
         const { signal } = (this.abortController = new AbortController());
 
@@ -205,15 +206,15 @@ export class Connector implements ExtendedConnectorInterface {
                 return buildListNodesResult(connectionNodeConfigs, offset, data.series.num_found);
             }
 
-            // Return a page of the resolved category's immediate children (category_tree isn't paginated by
-            // DBnomics, so slice it here). Dataset-leaf children get their series count merged in from
-            // fetchDatasetSeriesCountsByCode; category children get a free immediate-child count.
+            // Return all of the resolved category's immediate children in one response — unlike providers/series,
+            // this isn't paged: the whole tree is already in memory and a category's child count is small.
+            // Dataset-leaf children get their series count merged in from fetchDatasetSeriesCountsByCode; category
+            // children get a free immediate-child count.
             const nbSeriesByCode = resolved.nodes.some((node) => !node.children) ? await this.fetchDatasetSeriesCountsByCode(providerCode, signal) : undefined;
-            const page = resolved.nodes.slice(offset, offset + limit);
-            const connectionNodeConfigs = page.map((node) =>
+            const connectionNodeConfigs = resolved.nodes.map((node) =>
                 constructFolderNodeConfig(options.folderPath, node.code, node.name, node.children ? node.children.length : nbSeriesByCode?.get(node.code))
             );
-            return buildListNodesResult(connectionNodeConfigs, offset, resolved.nodes.length);
+            return buildListNodesResult(connectionNodeConfigs, 0, resolved.nodes.length);
         } catch (error) {
             throw normalizeToError(error);
         } finally {

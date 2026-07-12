@@ -98,7 +98,7 @@ describe('Connector', () => {
             ]);
         });
 
-        it('paginates a category level’s children client-side, without an extra fetch when no children are dataset leaves', async () => {
+        it('returns every child of a category level in one response, ignoring limit/offset, without an extra fetch when no children are dataset leaves', async () => {
             const fetchMock = buildRoutedFetchMock({
                 'https://api.db.nomics.world/v22/providers/PROV': {
                     category_tree: [
@@ -111,11 +111,17 @@ describe('Connector', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             const connector = new Connector({} as never, []);
+            // limit/offset are supplied but must be ignored for a category level -- all 3 children come back regardless.
             const result = await connector.listNodes({ folderPath: '/PROV', limit: 2, offset: 1 } as ListNodesOptions);
 
             expect(fetchMock).toHaveBeenCalledTimes(1); // Only the tree fetch -- no per-page API call, no dataset-count merge needed.
-            expect(result.connectionNodeConfigs).toEqual([expect.objectContaining({ id: 'B' }), expect.objectContaining({ id: 'C' })]);
+            expect(result.connectionNodeConfigs).toEqual([
+                expect.objectContaining({ id: 'A' }),
+                expect.objectContaining({ id: 'B' }),
+                expect.objectContaining({ id: 'C' })
+            ]);
             expect(result.isMore).toBe(false);
+            expect(result.cursor).toBeUndefined();
             expect(result.totalCount).toBe(3);
         });
 
