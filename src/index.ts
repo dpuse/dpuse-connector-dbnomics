@@ -364,11 +364,18 @@ function resolveCategoryTreeNode(nodes: CategoryTreeNode[], segments: string[], 
     return { kind: 'category', nodes: currentNodes };
 }
 
-// Split an object path ("/{provider}/{dataset}/{seriesCode}") into its three identifiers.
+// Split an object path ("/{provider}/{...categorySegments}/{dataset}/{seriesCode}") into the three identifiers a
+// series needs. Category segments (if any) sit between provider and dataset and are irrelevant here — series are
+// keyed only on (provider, dataset, seriesCode) — so the provider is always segment 1, the series code is always
+// the last segment, and the dataset code is always the second-to-last, however many category levels lie between.
 function establishSeriesIdentifiers(path: string): { providerCode: string; datasetCode: string; seriesCode: string } {
     const pathSegments = path.split('/');
-    const [, providerCode, datasetCode, seriesCode] = pathSegments;
-    if (pathSegments.length !== 4 || !providerCode || !datasetCode || !seriesCode) throw new Error(`${ERROR_INVALID_OBJECT_PATH} '${path}'.`);
+    const providerCode = pathSegments[1];
+    const datasetCode = pathSegments.at(-2);
+    const seriesCode = pathSegments.at(-1);
+    if (pathSegments.length < 4 || pathSegments[0] !== '' || !providerCode || !datasetCode || !seriesCode) {
+        throw new Error(`${ERROR_INVALID_OBJECT_PATH} '${path}'.`);
+    }
     return { providerCode, datasetCode, seriesCode };
 }
 

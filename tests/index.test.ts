@@ -249,6 +249,23 @@ describe('Connector', () => {
             ]);
         });
 
+        it('previews a series reached through category_tree levels, ignoring the category segments in the path', async () => {
+            const fetchMock = vi.fn().mockResolvedValue(
+                buildFetchResponse({
+                    series: { docs: [{ series_code: 'A.FR.PIB', series_name: 'French GDP', period: ['2000'], value: [1.1] }], num_found: 1 }
+                })
+            );
+            vi.stubGlobal('fetch', fetchMock);
+
+            const connector = new Connector(buildConnectorUtilities(), []);
+            // Provider -> category -> subcategory -> dataset -> series: two category segments between provider and dataset.
+            const result = await connector.previewObject({ path: '/INSEE/ECO/ECO_GENERALE/CNA-2010-PIB/A.FR.PIB' } as PreviewObjectOptions);
+
+            // The category segments (ECO/ECO_GENERALE) are dropped -- series are only keyed on provider/dataset/seriesCode.
+            expectProxiedFetch(fetchMock, 'https://api.db.nomics.world/v22/series/INSEE/CNA-2010-PIB/A.FR.PIB?observations=1');
+            expect(result.parsedRecords).toHaveLength(2);
+        });
+
         it('truncates to the preview row limit for a large series', async () => {
             const periods = Array.from({ length: 60 }, (_, index) => String(2000 + index));
             const values = Array.from({ length: 60 }, (_, index) => index);

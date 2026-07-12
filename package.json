@@ -1,6 +1,6 @@
 {
     "name": "@dpuse/dpuse-connector-dbnomics",
-    "version": "0.0.17",
+    "version": "0.0.18",
     "private": false,
     "description": "Template scaffold for building new DPUse connectors.",
     "license": "MIT",
