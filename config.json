@@ -32,8 +32,8 @@
     "status": null,
     "statusId": "alpha",
     "typeId": "connector",
-    "vendorAccountURL": null,
-    "vendorDocumentationURL": null,
-    "vendorHomeURL": null,
-    "version": "0.0.16"
+    "vendorAccountURL": "https://db.nomics.world/login",
+    "vendorDocumentationURL": "https://docs.db.nomics.world/",
+    "vendorHomeURL": "https://db.nomics.world/",
+    "version": "0.0.17"
 }

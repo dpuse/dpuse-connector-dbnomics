@@ -1,5 +1,5 @@
 {
-  "version": "0.0.13",
+  "version": "0.0.16",
   "name": "@dpuse/dpuse-connector-dbnomics",
   "dependencies": {
     "@dpuse/dpuse-shared": {

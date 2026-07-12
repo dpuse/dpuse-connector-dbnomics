@@ -16,6 +16,16 @@ function expectProxiedFetch(fetchMock: ReturnType<typeof vi.fn>, url: string): v
     expect(fetchMock).toHaveBeenCalledWith(PROXY_URL, expect.objectContaining({ method: 'POST', body: JSON.stringify({ method: 'GET', url }) }));
 }
 
+// Routes a proxied fetch to a fixture by the target URL it was asked to forward, so multi-call flows (e.g. fetch
+// the category tree, then fetch series) can be tested against distinct responses per URL instead of one canned body.
+function buildRoutedFetchMock(routes: Record<string, unknown>): ReturnType<typeof vi.fn> {
+    return vi.fn().mockImplementation((_target: string, init: { body: string }) => {
+        const { url } = JSON.parse(init.body) as { url: string };
+        if (!(url in routes)) throw new Error(`Unexpected proxied fetch to '${url}'.`);
+        return Promise.resolve(buildFetchResponse(routes[url]));
+    });
+}
+
 // Minimal ConnectorUtilities stub — previewObject calls inferDataTypes; the other two methods aren't exercised here.
 function buildConnectorUtilities(): ConnectorUtilities {
     return {
@@ -65,45 +75,105 @@ describe('Connector', () => {
             expect(result.totalCount).toBe(1);
         });
 
-        it('lists datasets for a provider path', async () => {
-            const fetchMock = vi
-                .fn()
-                .mockResolvedValue(
-                    buildFetchResponse({ datasets: { docs: [{ code: 'AFRREO', name: 'Sub-Saharan Africa', nb_series: 1654 }], limit: 100, offset: 0, num_found: 1 } })
-                );
+        it('lists a provider’s top-level category_tree entries, merging series counts onto dataset leaves', async () => {
+            const fetchMock = buildRoutedFetchMock({
+                'https://api.db.nomics.world/v22/providers/IMF': {
+                    category_tree: [
+                        { code: 'CAT1', name: 'Category One', children: [{ code: 'DS1', name: 'Dataset One' }] },
+                        { code: 'AFRREO', name: 'Sub-Saharan Africa' } // Leaf directly at the top level (seen live on ECB).
+                    ]
+                },
+                'https://api.db.nomics.world/v22/datasets/IMF?limit=500&offset=0': {
+                    datasets: { docs: [{ code: 'AFRREO', name: 'Sub-Saharan Africa', nb_series: 1654 }], limit: 500, offset: 0, num_found: 1 }
+                }
+            });
             vi.stubGlobal('fetch', fetchMock);
 
             const connector = new Connector({} as never, []);
             const result = await connector.listNodes({ folderPath: '/IMF' } as ListNodesOptions);
 
-            expectProxiedFetch(fetchMock, 'https://api.db.nomics.world/v22/datasets/IMF?limit=100&offset=0');
             expect(result.connectionNodeConfigs).toEqual([
-                expect.objectContaining({ id: 'AFRREO', childCount: 1654, typeId: 'folder', folderPath: '/IMF' })
+                expect.objectContaining({ id: 'CAT1', childCount: 1, typeId: 'folder', folderPath: '/IMF' }), // Category -> immediate child count, free.
+                expect.objectContaining({ id: 'AFRREO', childCount: 1654, typeId: 'folder', folderPath: '/IMF' }) // Dataset leaf -> merged nb_series.
             ]);
         });
 
-        it('lists a single page of series for a dataset path, honoring limit/offset without looping', async () => {
-            const fetchMock = vi
-                .fn()
-                .mockResolvedValue(
-                    buildFetchResponse({ series: { docs: [{ series_code: 'A.NGDP', series_name: 'GDP, current prices' }], limit: 50, offset: 50, num_found: 1654 } })
-                );
+        it('paginates a category level’s children client-side, without an extra fetch when no children are dataset leaves', async () => {
+            const fetchMock = buildRoutedFetchMock({
+                'https://api.db.nomics.world/v22/providers/PROV': {
+                    category_tree: [
+                        { code: 'A', name: 'A', children: [{ code: 'X1', name: 'x1' }] },
+                        { code: 'B', name: 'B', children: [{ code: 'X2', name: 'x2' }] },
+                        { code: 'C', name: 'C', children: [{ code: 'X3', name: 'x3' }] }
+                    ]
+                }
+            });
             vi.stubGlobal('fetch', fetchMock);
 
             const connector = new Connector({} as never, []);
-            const result = await connector.listNodes({ folderPath: '/IMF/AFRREO', limit: 50, offset: 50 } as ListNodesOptions);
+            const result = await connector.listNodes({ folderPath: '/PROV', limit: 2, offset: 1 } as ListNodesOptions);
 
-            expect(fetchMock).toHaveBeenCalledTimes(1);
-            expectProxiedFetch(fetchMock, 'https://api.db.nomics.world/v22/series/IMF/AFRREO?limit=50&offset=50');
-            expect(result.connectionNodeConfigs).toEqual([expect.objectContaining({ id: 'A.NGDP', typeId: 'object', folderPath: '/IMF/AFRREO' })]);
-            expect(result.isMore).toBe(true);
-            expect(result.cursor).toBe(51);
-            expect(result.totalCount).toBe(1654);
+            expect(fetchMock).toHaveBeenCalledTimes(1); // Only the tree fetch -- no per-page API call, no dataset-count merge needed.
+            expect(result.connectionNodeConfigs).toEqual([expect.objectContaining({ id: 'B' }), expect.objectContaining({ id: 'C' })]);
+            expect(result.isMore).toBe(false);
+            expect(result.totalCount).toBe(3);
+        });
+
+        it('descends multiple category levels to a dataset leaf, then lists its series', async () => {
+            const fetchMock = buildRoutedFetchMock({
+                'https://api.db.nomics.world/v22/providers/INSEE': {
+                    category_tree: [{ code: 'ECO', name: 'Economy', children: [{ code: 'GEN', name: 'General', children: [{ code: 'CNA-2010-PIB', name: 'GDP' }] }] }]
+                },
+                'https://api.db.nomics.world/v22/series/INSEE/CNA-2010-PIB?limit=100&offset=0': {
+                    series: { docs: [{ series_code: 'A.FR.PIB', series_name: 'French GDP' }], limit: 100, offset: 0, num_found: 1 }
+                }
+            });
+            vi.stubGlobal('fetch', fetchMock);
+
+            const connector = new Connector({} as never, []);
+            const result = await connector.listNodes({ folderPath: '/INSEE/ECO/GEN/CNA-2010-PIB' } as ListNodesOptions);
+
+            expect(result.connectionNodeConfigs).toEqual([expect.objectContaining({ id: 'A.FR.PIB', typeId: 'object', folderPath: '/INSEE/ECO/GEN/CNA-2010-PIB' })]);
+        });
+
+        it('falls back to the flat dataset list when category_tree is empty', async () => {
+            const fetchMock = buildRoutedFetchMock({
+                'https://api.db.nomics.world/v22/providers/IMF': { category_tree: [] },
+                'https://api.db.nomics.world/v22/datasets/IMF?limit=100&offset=0': {
+                    datasets: { docs: [{ code: 'AFRREO', name: 'Sub-Saharan Africa', nb_series: 1654 }], limit: 100, offset: 0, num_found: 1 }
+                }
+            });
+            vi.stubGlobal('fetch', fetchMock);
+
+            const connector = new Connector({} as never, []);
+            const result = await connector.listNodes({ folderPath: '/IMF' } as ListNodesOptions);
+
+            expect(result.connectionNodeConfigs).toEqual([expect.objectContaining({ id: 'AFRREO', childCount: 1654, typeId: 'folder', folderPath: '/IMF' })]);
+        });
+
+        it('rejects a path that tries to descend past a resolved dataset leaf', async () => {
+            const fetchMock = buildRoutedFetchMock({
+                'https://api.db.nomics.world/v22/providers/PROV': { category_tree: [{ code: 'DS1', name: 'Dataset One' }] }
+            });
+            vi.stubGlobal('fetch', fetchMock);
+
+            const connector = new Connector({} as never, []);
+            await expect(connector.listNodes({ folderPath: '/PROV/DS1/EXTRA' } as ListNodesOptions)).rejects.toThrow(/invalid folder path/i);
+        });
+
+        it('rejects a path segment with no matching category or dataset code', async () => {
+            const fetchMock = buildRoutedFetchMock({
+                'https://api.db.nomics.world/v22/providers/PROV': { category_tree: [{ code: 'A', name: 'A', children: [{ code: 'X1', name: 'x1' }] }] }
+            });
+            vi.stubGlobal('fetch', fetchMock);
+
+            const connector = new Connector({} as never, []);
+            await expect(connector.listNodes({ folderPath: '/PROV/ZZZ' } as ListNodesOptions)).rejects.toThrow(/invalid folder path/i);
         });
 
         it('rejects an invalid folder path', async () => {
             const connector = new Connector({} as never, []);
-            await expect(connector.listNodes({ folderPath: '/a/b/c' } as ListNodesOptions)).rejects.toThrow(/invalid folder path/i);
+            await expect(connector.listNodes({ folderPath: 'no-leading-slash' } as ListNodesOptions)).rejects.toThrow(/invalid folder path/i);
         });
 
         it('surfaces a non-OK DBnomics response as an error', async () => {
