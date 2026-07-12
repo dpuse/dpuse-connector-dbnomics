@@ -16,7 +16,7 @@ DPUse (Data Positioning & Use) is an in-browser application that positions your 
 
 ## Introduction
 
-Template scaffold for building new DPUse connectors. Replace this description, and the sample action stubs in src/index.ts, with your connector's actual behaviour.
+DBnomics is a free platform that aggregates publicly available economic data from national and international statistical institutions, as well as researchers and private companies. All data is standardized into a common format to simplify search, access, and analysis.
 
 <!-- OPENING_END -->
 

@@ -1,8 +1,8 @@
 {
     "name": "@dpuse/dpuse-connector-dbnomics",
-    "version": "0.0.19",
+    "version": "0.0.20",
     "private": false,
-    "description": "Template scaffold for building new DPUse connectors.",
+    "description": "Provides access to economic data hosted by DBnomics.",
     "license": "MIT",
     "author": "Jonathan Terrell <terrell.jm@gmail.com>",
     "type": "module",

@@ -142,6 +142,30 @@ describe('Connector', () => {
             expect(result.connectionNodeConfigs).toEqual([expect.objectContaining({ id: 'A.FR.PIB', typeId: 'object', folderPath: '/INSEE/ECO/GEN/CNA-2010-PIB' })]);
         });
 
+        it('falls back to the category name as its path segment when a provider omits category codes (e.g. Bank of Indonesia, ECB)', async () => {
+            const fetchMock = buildRoutedFetchMock({
+                'https://api.db.nomics.world/v22/providers/BI': {
+                    category_tree: [{ code: null, name: 'MONEY AND BANKING', children: [{ code: 'DS1', name: 'Dataset One' }] }]
+                },
+                'https://api.db.nomics.world/v22/datasets/BI?limit=500&offset=0': {
+                    datasets: { docs: [{ code: 'DS1', name: 'Dataset One', nb_series: 12 }], limit: 500, offset: 0, num_found: 1 }
+                }
+            });
+            vi.stubGlobal('fetch', fetchMock);
+
+            const connector = new Connector({} as never, []);
+            const topLevel = await connector.listNodes({ folderPath: '/BI' } as ListNodesOptions);
+
+            // The category's id must be its name (not null / the string "null"), since that's what the app will use
+            // to build the next folderPath when the user drills in.
+            const category = topLevel.connectionNodeConfigs[0];
+            expect(category).toEqual(expect.objectContaining({ id: 'MONEY AND BANKING', typeId: 'folder' }));
+
+            // Drilling into that folder path must resolve back to the same category, not throw "invalid folder path".
+            const nextLevel = await connector.listNodes({ folderPath: `/BI/${category?.id}` } as ListNodesOptions);
+            expect(nextLevel.connectionNodeConfigs).toEqual([expect.objectContaining({ id: 'DS1', childCount: 12, typeId: 'folder' })]);
+        });
+
         it('falls back to the flat dataset list when category_tree is empty', async () => {
             const fetchMock = buildRoutedFetchMock({
                 'https://api.db.nomics.world/v22/providers/IMF': { category_tree: [] },

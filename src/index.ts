@@ -57,7 +57,7 @@ interface SeriesObservationsResponse {
 }
 
 interface CategoryTreeNode {
-    code: string;
+    code: string | null; // Some providers (e.g. Bank of Indonesia, ECB) omit codes on category nodes; leaves (real datasets) always have one.
     name: string;
     children?: CategoryTreeNode[];
 }
@@ -211,9 +211,10 @@ export class Connector implements ExtendedConnectorInterface {
             // Dataset-leaf children get their series count merged in from fetchDatasetSeriesCountsByCode; category
             // children get a free immediate-child count.
             const nbSeriesByCode = resolved.nodes.some((node) => !node.children) ? await this.fetchDatasetSeriesCountsByCode(providerCode, signal) : undefined;
-            const connectionNodeConfigs = resolved.nodes.map((node) =>
-                constructFolderNodeConfig(options.folderPath, node.code, node.name, node.children ? node.children.length : nbSeriesByCode?.get(node.code))
-            );
+            const connectionNodeConfigs = resolved.nodes.map((node) => {
+                const childCount = node.children ? node.children.length : nbSeriesByCode?.get(node.code ?? '');
+                return constructFolderNodeConfig(options.folderPath, resolveCategoryNodeCode(node), node.name, childCount);
+            });
             return buildListNodesResult(connectionNodeConfigs, 0, resolved.nodes.length);
         } catch (error) {
             throw normalizeToError(error);
@@ -349,14 +350,22 @@ export class Connector implements ExtendedConnectorInterface {
 // Walk a provider's category_tree by matching each folder-path segment against a node code at that level. A node
 // with `children` is a category (descend into it); a node without `children` is a dataset leaf, which must be the
 // last segment (there's nothing to descend into further — series-listing takes over from there).
+// Some providers (e.g. Bank of Indonesia, ECB) omit `code` on category nodes — only leaves (real datasets) are
+// guaranteed one. Fall back to `name` as the path-segment identifier when `code` is missing, since it's the only
+// other reasonably stable field available; '/' is escaped since folder paths are split on it.
+function resolveCategoryNodeCode(node: CategoryTreeNode): string {
+    return node.code ?? node.name.replaceAll('/', '⁄');
+}
+
 function resolveCategoryTreeNode(nodes: CategoryTreeNode[], segments: string[], folderPath: string): ResolvedCategoryNode {
     let currentNodes = nodes;
     for (const [index, segment] of segments.entries()) {
-        const found = currentNodes.find((node) => node.code === segment);
+        const found = currentNodes.find((node) => resolveCategoryNodeCode(node) === segment);
         if (!found) throw new Error(`${ERROR_INVALID_FOLDER_PATH} '${folderPath}'.`);
         if (found.children) {
             currentNodes = found.children;
         } else if (index === segments.length - 1) {
+            if (found.code == null) throw new Error(`Encountered dataset '${found.name}' with no code at '${folderPath}'.`);
             return { kind: 'dataset', code: found.code, name: found.name };
         } else {
             throw new Error(`${ERROR_INVALID_FOLDER_PATH} '${folderPath}'.`); // Tried to descend past a dataset leaf.
