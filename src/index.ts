@@ -43,15 +43,34 @@ interface DBnomicsPage<T> {
 }
 
 interface ProvidersResponse {
-    providers: DBnomicsPage<{ code: string; name: string }>;
+    providers: DBnomicsPage<{ code: string; name: string; index_at: string; region: string; slug: string; terms_of_use: string; website: string }>;
 }
 
 interface DatasetsResponse {
-    datasets: DBnomicsPage<{ code: string; name: string; nb_series: number }>;
+    datasets: DBnomicsPage<{
+        code: string;
+        name: string;
+        description: string;
+        description_code_order: string[];
+        dimensions_values_labels: Record<string, Record<string, string>>[];
+        dir_hash: string;
+        indexed_at: string;
+        nb_series: number;
+        provider_code: string;
+        provider_name: string;
+    }>;
 }
 
 interface SeriesListResponse {
-    series: DBnomicsPage<{ series_code: string; series_name: string }>;
+    series: DBnomicsPage<{
+        series_code: string;
+        series_name: string;
+        dimensions: Record<string, string>[];
+        index_at: string;
+        provider_code: string;
+        dataset_code: string;
+        dataset_name: string;
+    }>;
 }
 
 interface SeriesObservationsResponse {
@@ -108,7 +127,7 @@ export class Connector implements ExtendedConnectorInterface {
         this.toolConfigs = toolConfigs;
     }
 
-    // Operations ──────────────────────────────────────────────────────────────────────────────────────────────────────
+    // Actions ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 
     // Abort the currently running operation
     abortOperation(): void {
