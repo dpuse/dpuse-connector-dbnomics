@@ -66,7 +66,7 @@
         "eslint": "^10.7.0",
         "prettier": "^3.9.5",
         "sonda": "^0.14.0",
-        "typescript": "^6.0.3",
+        "typescript": "^7.0.2",
         "vite": "^8.1.4",
         "vite-plugin-dts": "^5.0.3",
         "vitest": "^4.1.10",
