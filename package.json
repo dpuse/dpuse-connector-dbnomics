@@ -60,7 +60,7 @@
         "@dpuse/dpuse-shared": "^0.3.741"
     },
     "devDependencies": {
-        "@dpuse/dpuse-development": "^0.3.688",
+        "@dpuse/dpuse-development": "^0.3.690",
         "@dpuse/eslint-config-dpuse": "^1.0.113",
         "@types/node": "^26.1.1",
         "eslint": "^10.7.0",
