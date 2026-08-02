@@ -1,10 +1,10 @@
 {
-  "version": "0.0.20",
+  "version": "0.0.27",
   "name": "@dpuse/dpuse-connector-dbnomics",
   "dependencies": {
     "@dpuse/dpuse-shared": {
-      "version": "0.3.737",
-      "resolved": "https://registry.npmjs.org/@dpuse/dpuse-shared/-/dpuse-shared-0.3.737.tgz",
+      "version": "0.3.760",
+      "resolved": "https://registry.npmjs.org/@dpuse/dpuse-shared/-/dpuse-shared-0.3.760.tgz",
       "overridden": false
     }
   }

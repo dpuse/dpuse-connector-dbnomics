@@ -36,6 +36,7 @@ This connector is a Source connector that supports only read actions. Connectors
 | Describe Connection |  |
 | Drop Object |  |
 | Find Object | ✓ |
+| Get Info | ✓ |
 | Get Readable Stream | ✓ |
 | Get Record |  |
 | List Nodes | ✓ |
@@ -73,7 +74,7 @@ License data is collected automatically on each release using [license-checker](
 
 |Dependency|Version|License(s)|Document|
 |:-|:-:|:-|:-|
-|[@dpuse/dpuse-shared](https://github.com/dpuse/dpuse-shared)|0.3.737|MIT|[LICENSE](licenses/downloads/@dpuse/dpuse-shared@0.3.737-LICENSE.txt)|
+|[@dpuse/dpuse-shared](https://github.com/dpuse/dpuse-shared)|0.3.760|MIT|[LICENSE](licenses/downloads/@dpuse/dpuse-shared@0.3.760-LICENSE.txt)|
 
 <!-- DEPENDENCY_LICENSES_END -->
 
@@ -83,7 +84,7 @@ License data is collected automatically on each release using [license-checker](
 
 The dependency tree below lists every package in this project — direct and transitive — along with its installed version, release date, and update status. Packages flagged ❗ have a newer version available; ⚠️ indicates a package that hasn't been updated in the last 6 months or longer. Neither flag necessarily indicates a problem: we let new releases stabilise before upgrading, and some packages are simply mature and stable, requiring no active development.
 
-- **[@dpuse/dpuse-shared](https://github.com/dpuse/dpuse-shared)** 0.3.737 — this month: 2026-07-07
+- **[@dpuse/dpuse-shared](https://github.com/dpuse/dpuse-shared)** 0.3.760 — this month: 2026-08-02
 
 <!-- DEPENDENCY_TREE_END -->
 
@@ -101,6 +102,8 @@ _Note: Sonda's Vite reports currently exclude CSS files, since Vite does not gen
 | &nbsp;&nbsp;&nbsp;&nbsp;src → index.ts | `██████████████░░░░░░` 71.9% |
 | &nbsp;&nbsp;&nbsp;&nbsp;(unassigned) → [unassigned] | `████░░░░░░░░░░░░░░░░` 22.1% |
 | &nbsp;&nbsp;&nbsp;&nbsp;@dpuse/dpuse-shared → dist/dpuse-shared-errors.es.js | `█░░░░░░░░░░░░░░░░░░░` 6.0% |
+
+(unassigned) = bytes Sonda can't trace to a specific source line (whitespace, stray keywords, bundler-injected region markers) — not actual missing/unknown code.
 
 <!-- BUNDLE_END -->
 
