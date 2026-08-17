@@ -1,6 +1,6 @@
 {
     "name": "@dpuse/dpuse-connector-dbnomics",
-    "version": "0.0.37",
+    "version": "0.0.38",
     "private": false,
     "description": "Provides access to economic data hosted by DBnomics.",
     "license": "MIT",
