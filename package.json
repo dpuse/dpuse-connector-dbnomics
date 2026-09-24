@@ -68,7 +68,7 @@
         "sonda": "^0.14.0",
         "typescript": "^6.0.3",
         "vite": "^8.3.0",
-        "vite-plugin-dts": "^5.1.0",
+        "vite-plugin-dts": "^5.1.1",
         "vitest": "^5.0.1",
         "wrangler": "^4.135.0"
     }
