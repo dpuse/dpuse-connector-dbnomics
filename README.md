@@ -5,14 +5,22 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![DPUse version](https://img.shields.io/github/v/release/dpuse/dpuse-connector-dbnomics?color=f6821f&label=DPUse)](https://github.com/dpuse/dpuse-connector-dbnomics/releases/latest)
 [![CI](https://github.com/dpuse/dpuse-connector-dbnomics/actions/workflows/ci.yml/badge.svg)](https://github.com/dpuse/dpuse-connector-dbnomics/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/dpuse/dpuse-connector-dbnomics/actions/workflows/codeql.yml/badge.svg)](https://github.com/dpuse/dpuse-connector-dbnomics/actions/workflows/codeql.yml)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=dpuse_dpuse-connector-dbnomics&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=dpuse_dpuse-connector-dbnomics)
 
-[Documentation](https://www.dpuse.app) · [Report a Vulnerability](https://github.com/dpuse/dpuse-connector-dbnomics/security/advisories/new) · [Open an Issue](https://github.com/dpuse/dpuse-connector-dbnomics/issues)
+[DPUse](https://www.dpuse.app) · [Report a Vulnerability](https://github.com/dpuse/dpuse-connector-dbnomics/security/advisories/new) · [Open an Issue](https://github.com/dpuse/dpuse-connector-dbnomics/issues)
+
+Provides access to economic data hosted by DBnomics.
 
 ## About DPUse
 
-DPUse (Data Positioning & Use) is an in-browser application that positions your data for use through three core activities: sourcing, contextualising, and publishing. **Sourcing** uses a library of [Connectors](https://www.dpuse.app) to establish [Connections](https://www.dpuse.app) to applications, databases, file stores, and curated datasets; these connections are subsequently used to configure structured [Data Views](https://www.dpuse.app) from the underlying sources. **Contextualising** extracts chronological events from those [Data Views](https://www.dpuse.app) and maps them into comprehensive [Context Models](https://www.dpuse.app). This provides the DPUse Engine with the structural framework required to generate deterministic transactions, facts, or observations. **Publishing** employs a library of [Presenters](https://www.dpuse.app) to render standard [Presentations](https://www.dpuse.app) immediately using the contextualised data; additionally, [Cookbooks](https://www.dpuse.app) of [Recipes](https://www.dpuse.app) allow you to build Data Apps using your preferred tools.
+DPUse (Data Positioning & Use) is an in-browser application that positions your data for use through three core activities: sourcing, contextualising, and publishing.
+
+**Sourcing** uses a library of [Connectors](https://www.dpuse.app/connectors) to establish [Connections](https://www.dpuse.app) to applications, databases, file stores, and curated datasets; these connections are subsequently used to configure structured [Data Views](https://www.dpuse.app) from the underlying sources.
+
+**Contextualising** extracts chronological events from those [Data Views](https://www.dpuse.app) and maps them into comprehensive [Context Models](https://www.dpuse.app). This gives the DPUse Engine the structural framework needed to generate deterministic transactions, facts, or observations.
+
+**Publishing** uses a library of [Presenters](https://www.dpuse.app) to render standard [Presentations](https://www.dpuse.app) immediately using the contextualised data; additionally, [Cookbooks](https://www.dpuse.app) of [Recipes](https://www.dpuse.app) let you build Data Apps using your preferred tools.
+
+In addition, DPUse provides [Tools](https://www.dpuse.app) used by the application, and you can use them to construct connectors and presenters.
 
 ## Introduction
 
@@ -20,41 +28,41 @@ DBnomics is a free platform that aggregates publicly available economic data fro
 
 <!-- OPENING_END -->
 
-## Supported Actions
+<!-- SUPPORTED_ACTIONS_START -->
 
-<!-- CONNECTOR_ACTIONS_START -->
+## Supported Actions
 
 Connectors conform to a unified interface contract by implementing a specific subset of standard actions. These standardised actions allow the DPUse application to interact with any underlying data source in the same way, enabling Connectors to be built independently and loaded dynamically at runtime.
 
 This connector is a Source connector that supports only read actions. Connectors can also function as a Destination (write-only) or Bidirectional (read/write), depending on the actions they support. The table below lists all connector actions and highlights those supported by this connector.
 
-|Action|Supported|
-|:----|:-------:|
-| Abort Operation | ✓ |
-| Audit Object Content | ✓ |
-| Create Object |  |
-| Describe Connection |  |
-| Drop Object |  |
-| Find Object | ✓ |
-| Get Info | ✓ |
-| Get Readable Stream | ✓ |
-| Get Record |  |
-| List Nodes | ✓ |
-| Preview Object | ✓ |
-| Remove Records |  |
-| Retrieve Chunks |  |
-| Retrieve Records | ✓ |
-| Upsert Records |  |
+| Action               | Supported |
+| :------------------- | :-------: |
+| Abort Operation      |     ✓     |
+| Audit Object Content |     ✓     |
+| Create Object        |           |
+| Describe Connection  |           |
+| Drop Object          |           |
+| Find Object          |     ✓     |
+| Get Info             |     ✓     |
+| Get Readable Stream  |     ✓     |
+| Get Record           |           |
+| List Nodes           |     ✓     |
+| Preview Object       |     ✓     |
+| Remove Records       |           |
+| Retrieve Chunks      |           |
+| Retrieve Records     |     ✓     |
+| Upsert Records       |           |
 
-<!-- CONNECTOR_ACTIONS_END -->
-
-## Usage
+<!-- SUPPORTED_ACTIONS_END -->
 
 <!-- USAGE_START -->
 
+## Usage
+
 This connector is automatically uploaded to the DPUse Engine cloud once released and becomes instantly available to all new browser app instances, with existing instances notified of the update.
 
-You may view or clone this repository for your own purposes, such as building a new, similar connector, though there is currently no process to accept third-party connectors into DPUse at this stage. Cloned or forked code is unsupported and isn't guaranteed to remain compatible with the DPUse Engine as it evolves.
+You may view or clone this repository for your own purposes, such as building a new, similar connector, though there is currently no process to accept third-party connectors into DPUse at this stage.
 
 ```bash
 git clone https://github.com/dpuse/dpuse-connector-dbnomics.git
@@ -62,83 +70,104 @@ cd dpuse-connector-dbnomics
 npm install
 ```
 
-_Requires [Node.js](https://nodejs.org/) 23.11 or later, [npm](https://www.npmjs.com/) 11 or later, and [TypeScript](https://www.typescriptlang.org/) 6.0.3 or later._
+_Requires [Node.js](https://nodejs.org/) 24 or later, [npm](https://www.npmjs.com/) 12 or later, and [TypeScript](https://www.typescriptlang.org/) 6.0.3 or later._
+
+This repository is managed using the common set of actions provided by [@dpuse/dpuse-development](https://github.com/dpuse/dpuse-development). See the `scripts` block in [package.json](https://github.com/dpuse/dpuse-connector-dbnomics/blob/main/package.json) for details.
 
 <!-- USAGE_END -->
 
-## Dependency Licenses
-
 <!-- DEPENDENCY_LICENSES_START -->
 
-License data is collected automatically on each release using [license-checker](https://github.com/RSeidelsohn/license-checker-rseidelsohn). The following table lists all production dependencies. These dependencies (including transitive ones) have been checked and confirmed to use MIT — all permissive, commercially-friendly licenses. Users of the uploaded library are covered by these checks; developers cloning this repository should independently verify development dependencies.
+## Dependency Licenses
 
-|Dependency|Version|License(s)|Document|
-|:-|:-:|:-|:-|
-|[@dpuse/dpuse-shared](https://github.com/dpuse/dpuse-shared)|0.3.760|MIT|[LICENSE](licenses/downloads/@dpuse/dpuse-shared@0.3.760-LICENSE.txt)|
+License data is updated each time `npm run document` is run, using [license-checker](https://github.com/RSeidelsohn/license-checker-rseidelsohn). The following table lists every package whose code, styles or assets are included in this project's build, as recorded by the build itself. Modules loaded at run time are not included; each documents its own. These dependencies have been checked and confirmed to use MIT, all of which allow commercial use. All are used unmodified, so any licence conditions that apply only to modified versions are not triggered. Developers cloning this repository should independently verify development dependencies.
 
-<!-- DEPENDENCY_LICENSES_END -->
+| Dependency                                                   | Version | License(s) | Document                                                              |
+| :----------------------------------------------------------- | :-----: | :--------- | :-------------------------------------------------------------------- |
+| [@dpuse/dpuse-shared](https://github.com/dpuse/dpuse-shared) | 0.3.868 | MIT        | [LICENSE](licenses/downloads/@dpuse/dpuse-shared@0.3.868-LICENSE.txt) |
+| [valibot](https://github.com/open-circle/valibot)            |  1.5.0  | MIT        | [LICENSE](licenses/downloads/valibot@1.5.0-LICENSE.txt)               |
 
 ### Dependency Tree
 
-<!-- DEPENDENCY_TREE_START -->
+The dependency tree below shows how each package in the table above is reached — direct and transitive — along with its installed version, release date, and update status. A package that does not ship itself, such as one whose parts are bundled separately, is left out and what ships beneath it is shown in its place. Packages flagged ❗ have a newer version available; ⚠️ indicates a package that hasn't been updated in the last 6 months or longer. Neither flag necessarily indicates a problem: we let new releases stabilise before upgrading, and some packages are mature and stable (have limited or no dependencies), so they require no active development.
 
-The dependency tree below lists every package in this project — direct and transitive — along with its installed version, release date, and update status. Packages flagged ❗ have a newer version available; ⚠️ indicates a package that hasn't been updated in the last 6 months or longer. Neither flag necessarily indicates a problem: we let new releases stabilise before upgrading, and some packages are simply mature and stable, requiring no active development.
+- **[@dpuse/dpuse-shared](https://github.com/dpuse/dpuse-shared)** 0.3.868 — this month: 2026-10-02
+    - **[valibot](https://github.com/open-circle/valibot)** 1.5.0 — this month: 2026-09-09
 
-- **[@dpuse/dpuse-shared](https://github.com/dpuse/dpuse-shared)** 0.3.760 — this month: 2026-08-02
-
-<!-- DEPENDENCY_TREE_END -->
-
-## Bundle Analysis
+<!-- DEPENDENCY_LICENSES_END -->
 
 <!-- BUNDLE_START -->
 
-The Bundle Analysis Report is generated automatically on each release using [Sonda](https://sonda.dev/), which analyses final source maps to reveal the actual effects of tree-shaking and minification rather than relying on pre-build estimates.
+## Bundle Analysis
+
+This report is updated with each release, from the bundle the release builds, using [Sonda](https://sonda.dev/), which analyses final source maps to reveal the actual effects of tree-shaking and minification rather than relying on pre-build estimates.
 
 _Note: Sonda's Vite reports currently exclude CSS files, since Vite does not generate source maps for CSS._
 
-|Chunk/Module/File|Composition|
-|:------ |:-----------|
-| dist/dpuse-connector-dbnomics.es.js | 11.3 kB · brotli 3.2 kB |
-| &nbsp;&nbsp;&nbsp;&nbsp;src → index.ts | `██████████████░░░░░░` 71.9% |
-| &nbsp;&nbsp;&nbsp;&nbsp;(unassigned) → [unassigned] | `████░░░░░░░░░░░░░░░░` 22.1% |
-| &nbsp;&nbsp;&nbsp;&nbsp;@dpuse/dpuse-shared → dist/dpuse-shared-errors.es.js | `█░░░░░░░░░░░░░░░░░░░` 6.0% |
+| Chunk/Module/File                                                     | Composition                                 |
+| :-------------------------------------------------------------------- | :------------------------------------------ |
+| **dist/dpuse-connector-dbnomics.es.js**                               | 20.2 kB · gzip 6.0 kB · 100.0% of the build |
+| &nbsp;&nbsp;&nbsp;&nbsp;@dpuse/dpuse-shared → dist/dpuse-shared.es.js | `████████░░░░░░░░░░░░` 41.3% · 8.3 kB       |
+| &nbsp;&nbsp;&nbsp;&nbsp;src → index.ts                                | `████████░░░░░░░░░░░░` 40.6% · 8.2 kB       |
+| &nbsp;&nbsp;&nbsp;&nbsp;(bundler output, whitespace & JSON)           | `████░░░░░░░░░░░░░░░░` 18.1% · 3.7 kB       |
 
-(unassigned) = bytes Sonda can't trace to a specific source line (whitespace, stray keywords, bundler-injected region markers) — not actual missing/unknown code.
+Bars show each row's share of its output file.
+
+(bundler output, whitespace & JSON) = bytes Sonda can't trace to a source file: whitespace (indentation and line breaks), code the bundler generates (region comments, the combined import/export lines, its small runtime helper and wrappers), and imported JSON such as `config.json`, which the bundler doesn't map. The JSON and the generated code are real bytes that ship; the whitespace mostly disappears once compressed.
 
 <!-- BUNDLE_END -->
 
-<!-- GOVERNANCE_START -->
+<!-- QUALITY_SECURITY_START -->
 
-## Security & Quality
+## Quality & Security
 
-### CodeQL
+This section is updated each time `npm run document` is run. Settings come from the repository's workflow files and GitHub. Test coverage and the Fallow score are measured at the same time.
 
-[CodeQL](https://github.com/dpuse/dpuse-connector-dbnomics/security/code-scanning) static analysis runs on every push to `main` and on a weekly schedule, scanning TypeScript, JavaScript, Rust, and GitHub Actions workflow files for security vulnerabilities and coding errors.
+### Testing
 
-### SonarCloud
+| Check                | Status | What it does                                                                                                                                                                                      |
+| :------------------- | :----- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Unit tests           | ✅ On  | [Vitest](https://vitest.dev) runs the unit tests. Part of the [CI workflow](https://github.com/dpuse/dpuse-connector-dbnomics/actions/workflows/ci.yml) on every push and pull request to `main`. |
+| Property-based tests | ❌ Off | [fast-check](https://fast-check.dev) runs many random inputs per test to find edge cases, alongside the unit tests.                                                                               |
 
-[SonarCloud](https://sonarcloud.io/summary/new_code?id=dpuse_dpuse-connector-dbnomics) performs continuous code quality and security analysis on every push, detecting bugs, code smells, and security vulnerabilities in the TypeScript source.
+### Code Quality
 
-### Vulnerability Scanning
+| Check         | Status | What it does                                                                                                                                                                                                                                                                                                     |
+| :------------ | :----- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Code analysis | ✅ On  | [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=dpuse_dpuse-connector-dbnomics&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=dpuse_dpuse-connector-dbnomics) [SonarCloud](https://sonarcloud.io) checks every push for bugs, code smells and vulnerabilities. |
+| Linting       | ✅ On  | [ESLint](https://eslint.org) checks the code for errors and style problems. Part of the [CI workflow](https://github.com/dpuse/dpuse-connector-dbnomics/actions/workflows/ci.yml) on every push and pull request to `main`.                                                                                      |
 
-Two complementary tools continuously monitor dependencies for known vulnerabilities:
+### Security Analysis
 
-- [npm audit](https://docs.npmjs.com/cli/v8/commands/npm-audit) runs on every push to `main` via the CI workflow, failing the build if any high or critical severity vulnerabilities are detected.
-- [GitHub Dependabot](https://docs.github.com/en/code-security/dependabot) automatically raises pull requests to update vulnerable dependencies, drawing on the GitHub Advisory Database which combines NVD and npm-specific advisories.
+| Check           | Status | What it does                                                                                                                                                                                                                                                                                                                                                                               |
+| :-------------- | :----- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Push protection | ✅ On  | [GitHub push protection](https://docs.github.com/en/code-security/secret-scanning/push-protection-for-repositories-and-organizations) blocks pushes that contain credentials.                                                                                                                                                                                                              |
+| Static analysis | ✅ On  | [![CodeQL](https://github.com/dpuse/dpuse-connector-dbnomics/actions/workflows/codeql.yml/badge.svg)](https://github.com/dpuse/dpuse-connector-dbnomics/security/code-scanning) [CodeQL](https://codeql.github.com) scans GitHub Actions and JavaScript/TypeScript for security vulnerabilities, using the extended security queries, on every push and pull request to `main` and weekly. |
+| Secret scanning | ✅ On  | [GitHub secret scanning](https://docs.github.com/en/code-security/secret-scanning) detects credentials, such as API keys and tokens, committed to the repository.                                                                                                                                                                                                                          |
 
-### Supply Chain Security
+### Dependencies
 
-[Socket.dev](https://socket.dev) monitors all dependencies for supply chain risk — detecting malicious packages, dependency confusion, typosquatting, and suspicious behaviour that may not yet have a CVE.
-
-### Reporting Vulnerabilities
-
-Please do not open public GitHub issues for security vulnerabilities. Use [GitHub private vulnerability reporting](https://github.com/dpuse/dpuse-connector-dbnomics/security/advisories/new) instead. See [SECURITY.md](./SECURITY.md) for the full disclosure policy, contact details, and expected response times.
+| Check               | Status | What it does                                                                                                                                                                                                                                                                                                                    |
+| :------------------ | :----- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Vulnerability audit | ✅ On  | [npm audit](https://docs.npmjs.com/cli/commands/npm-audit) fails when a shipped dependency has any known vulnerability, or a development dependency has a high or critical one. Part of the [CI workflow](https://github.com/dpuse/dpuse-connector-dbnomics/actions/workflows/ci.yml) on every push and pull request to `main`. |
+| Supply chain risk   | ✅ On  | [Socket](https://socket.dev) flags malicious packages, typosquatting and suspicious behaviour that may not yet have a CVE.                                                                                                                                                                                                      |
+| Security alerts     | ✅ On  | [Dependabot](https://docs.github.com/en/code-security/dependabot) alerts when a dependency has a known vulnerability, using the GitHub Advisory Database.                                                                                                                                                                       |
+| Security updates    | ❌ Off | [Dependabot](https://docs.github.com/en/code-security/dependabot) opens pull requests that update vulnerable dependencies. These are handled manually.                                                                                                                                                                          |
+| Version updates     | ❌ Off | [Dependabot](https://docs.github.com/en/code-security/dependabot) opens pull requests for new dependency versions. These are handled manually.                                                                                                                                                                                  |
 
 ### OpenSSF 🚧
 
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/dpuse/dpuse-connector-dbnomics/badge)](https://scorecard.dev/viewer/?uri=github.com/dpuse/dpuse-connector-dbnomics)
 
-This project is working towards the [OpenSSF Best Practices](https://www.bestpractices.dev) Passing badge, a self-certification covering security policy, vulnerability reporting, build processes, code quality, and more. Currently the [OpenSSF Scorecard](https://scorecard.dev/viewer/?uri=github.com/dpuse/dpuse-connector-dbnomics) provides an independent automated assessment of the project's security practices and is an ongoing area of improvement.
+This project is working towards the [OpenSSF Best Practices](https://www.bestpractices.dev) Passing badge, a self-certification covering security policy, vulnerability reporting, build processes, code quality, and more. Currently the [OpenSSF Scorecard](https://scorecard.dev) provides an independent automated assessment of the project's security practices and is an ongoing area of improvement.
+
+### Reporting Vulnerabilities
+
+Please do not open public GitHub issues for security vulnerabilities. Use [GitHub private vulnerability reporting](https://github.com/dpuse/dpuse-connector-dbnomics/security/advisories/new) instead. See [SECURITY.md](./SECURITY.md) for the full disclosure policy, contact details, and expected response times.
+
+<!-- QUALITY_SECURITY_END -->
+
+<!-- CONTRIBUTING_LICENSE_START -->
 
 ## Contributing
 
@@ -150,6 +179,6 @@ For security vulnerabilities, see [Reporting Vulnerabilities](#reporting-vulnera
 
 This project is licensed under the MIT License, permitting free use, modification, and distribution.
 
-[MIT](./LICENSE) © 2026-present Jonathan Terrell
+[MIT](./LICENSE) © 2026 Jonathan Terrell
 
-<!-- GOVERNANCE_END -->
+<!-- CONTRIBUTING_LICENSE_END -->

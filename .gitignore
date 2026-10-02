@@ -2,11 +2,10 @@
 .dev.vars
 .env*
 .eslintcache
-.npmrc
+.fallow
 .wrangler
 coverage
 dist
-dist-scripts
 node_modules
 *.tsbuildinfo
 **/.DS_Store
@@ -25,3 +24,8 @@ rust/target
 __screenshots__/
 test-results/
 playwright-report/
+
+# VitePress
+site/kb/
+site/.vitepress/cache
+site/.vitepress/dist

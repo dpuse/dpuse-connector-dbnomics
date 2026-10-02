@@ -1,9 +1,8 @@
 // ── DPUse Framework
-import type { ConnectionNodeConfig } from '@dpuse/dpuse-shared/component/connection';
-import type { ToolConfig } from '@dpuse/dpuse-shared/component/module/tool';
 import type {
     AuditObjectContentOptions,
     AuditObjectContentResult,
+    ConnectionNodeConfig,
     ConnectorConfig,
     ConnectorInterface,
     ConnectorUtilities,
@@ -14,13 +13,15 @@ import type {
     GetReadableStreamOptions,
     ListNodesOptions,
     ListNodesResult,
+    ParsingRecord,
+    PreviewConfig,
     PreviewObjectOptions,
     RecordRetrievalTypeId,
     RetrieveRecordsOptions,
-    RetrieveRecordsSummary
-} from '@dpuse/dpuse-shared/component/module/connector';
-import { ConnectorError, normalizeToError } from '@dpuse/dpuse-shared/errors';
-import type { ParsingRecord, PreviewConfig } from '@dpuse/dpuse-shared/component/dataView';
+    RetrieveRecordsSummary,
+    ToolConfig
+} from '@dpuse/dpuse-shared';
+import { ConnectorError, normalizeToError } from '@dpuse/dpuse-shared';
 
 // ── Data
 import config from '~/config.json';
@@ -208,6 +209,7 @@ export class Connector implements ExtendedConnectorInterface {
         this.abortController = new AbortController();
 
         try {
+            // eslint-disable-next-line unicorn/no-useless-promise-resolve-reject
             return await Promise.resolve({} as ReadableStream<Uint8Array>);
         } catch (error) {
             throw normalizeToError(error);
@@ -499,7 +501,7 @@ function resolveGetInfoTarget(categoryTree: CategoryTreeNode[] | undefined, rema
     if (remainingSegments.length >= 2) {
         const datasetNode = findCategoryTreeNode(categoryTree, remainingSegments.slice(0, -1));
         const seriesCode = remainingSegments.at(-1);
-        if (datasetNode && !datasetNode.children && datasetNode.code != null && seriesCode) {
+        if (seriesCode && datasetNode && !datasetNode.children && datasetNode.code != null) {
             return { kind: 'series', datasetCode: datasetNode.code, seriesCode };
         }
     }
@@ -516,7 +518,7 @@ function establishSeriesIdentifiers(path: string): { providerCode: string; datas
     const providerCode = pathSegments[1];
     const datasetCode = pathSegments.at(-2);
     const seriesCode = pathSegments.at(-1);
-    if (pathSegments.length < 4 || pathSegments[0] !== '' || !providerCode || !datasetCode || !seriesCode) {
+    if (!providerCode || !datasetCode || !seriesCode || pathSegments.length < 4 || pathSegments[0] !== '') {
         throw new Error(`${ERROR_INVALID_OBJECT_PATH} '${path}'.`);
     }
     return { providerCode, datasetCode, seriesCode };
@@ -527,9 +529,12 @@ function constructFolderNodeConfig(folderPath: string, code: string, name: strin
     return {
         childCount,
         childNodes: [],
+        description: '',
         extension: undefined,
         folderPath,
         handle: undefined,
+        icon: null,
+        iconDark: null,
         id: code, // DBnomics codes are stable, unique, natural keys — reused as-is rather than a random id.
         label: name,
         lastModifiedAt: undefined,
@@ -546,8 +551,11 @@ function constructObjectNodeConfig(folderPath: string, code: string, name: strin
         childCount: undefined,
         childNodes: [],
         extension: undefined,
+        description: '',
         folderPath,
         handle: undefined,
+        icon: null,
+        iconDark: null,
         id: code,
         label: name,
         lastModifiedAt: undefined,

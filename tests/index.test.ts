@@ -1,13 +1,13 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Connector } from '@/index';
-import type { ConnectorUtilities, GetInfoOptions, ListNodesOptions, PreviewObjectOptions } from '@dpuse/dpuse-shared/component/module/connector';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { ConnectorUtilities, PreviewObjectOptions } from '@dpuse/dpuse-shared';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 const PROXY_URL = 'https://api.dpuse.app/proxy';
 
-function buildFetchResponse(body: unknown, ok = true): Response {
-    return { ok, status: ok ? 200 : 500, json: () => Promise.resolve(body) } as unknown as Response;
+function buildFetchResponse(body: unknown, isOk = true): Response {
+    return { ok: isOk, status: isOk ? 200 : 500, json: () => Promise.resolve(body) } as unknown as Response;
 }
 
 // The connector's fetches go through dpuse-api's /proxy route (POST {method, url}) rather than hitting DBnomics
@@ -21,7 +21,7 @@ function expectProxiedFetch(fetchMock: ReturnType<typeof vi.fn>, url: string): v
 function buildRoutedFetchMock(routes: Record<string, unknown>): ReturnType<typeof vi.fn> {
     return vi.fn().mockImplementation((_target: string, init: { body: string }) => {
         const { url } = JSON.parse(init.body) as { url: string };
-        if (!(url in routes)) throw new Error(`Unexpected proxied fetch to '${url}'.`);
+        if (!Object.hasOwn(routes, url)) throw new Error(`Unexpected proxied fetch to '${url}'.`);
         return Promise.resolve(buildFetchResponse(routes[url]));
     });
 }
@@ -46,7 +46,9 @@ describe('Connector', () => {
 
     it('abortOperation is a no-op when nothing is running', () => {
         const connector = new Connector({} as never, []);
-        expect(() => connector.abortOperation()).not.toThrow();
+        expect(() => {
+            connector.abortOperation();
+        }).not.toThrow();
         expect(connector.abortController).toBeUndefined();
     });
 
@@ -58,13 +60,11 @@ describe('Connector', () => {
         it('lists providers at the root path', async () => {
             const fetchMock = vi
                 .fn()
-                .mockResolvedValue(
-                    buildFetchResponse({ providers: { docs: [{ code: 'IMF', name: 'International Monetary Fund' }], limit: 100, offset: 0, num_found: 1 } })
-                );
+                .mockResolvedValue(buildFetchResponse({ providers: { docs: [{ code: 'IMF', name: 'International Monetary Fund' }], limit: 100, offset: 0, num_found: 1 } }));
             vi.stubGlobal('fetch', fetchMock);
 
             const connector = new Connector({} as never, []);
-            const result = await connector.listNodes({ folderPath: '' } as ListNodesOptions);
+            const result = await connector.listNodes({ folderPath: '' });
 
             expectProxiedFetch(fetchMock, 'https://api.db.nomics.world/v22/providers?limit=100&offset=0');
             expect(result.connectionNodeConfigs).toEqual([
@@ -90,7 +90,7 @@ describe('Connector', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             const connector = new Connector({} as never, []);
-            const result = await connector.listNodes({ folderPath: '/IMF' } as ListNodesOptions);
+            const result = await connector.listNodes({ folderPath: '/IMF' });
 
             expect(result.connectionNodeConfigs).toEqual([
                 expect.objectContaining({ id: 'CAT1', childCount: 1, typeId: 'folder', folderPath: '/IMF' }), // Category -> immediate child count, free.
@@ -112,14 +112,10 @@ describe('Connector', () => {
 
             const connector = new Connector({} as never, []);
             // limit/offset are supplied but must be ignored for a category level -- all 3 children come back regardless.
-            const result = await connector.listNodes({ folderPath: '/PROV', limit: 2, offset: 1 } as ListNodesOptions);
+            const result = await connector.listNodes({ folderPath: '/PROV', limit: 2, offset: 1 });
 
             expect(fetchMock).toHaveBeenCalledTimes(1); // Only the tree fetch -- no per-page API call, no dataset-count merge needed.
-            expect(result.connectionNodeConfigs).toEqual([
-                expect.objectContaining({ id: 'A' }),
-                expect.objectContaining({ id: 'B' }),
-                expect.objectContaining({ id: 'C' })
-            ]);
+            expect(result.connectionNodeConfigs).toEqual([expect.objectContaining({ id: 'A' }), expect.objectContaining({ id: 'B' }), expect.objectContaining({ id: 'C' })]);
             expect(result.isMore).toBe(false);
             expect(result.cursor).toBeUndefined();
             expect(result.totalCount).toBe(3);
@@ -137,7 +133,7 @@ describe('Connector', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             const connector = new Connector({} as never, []);
-            const result = await connector.listNodes({ folderPath: '/INSEE/ECO/GEN/CNA-2010-PIB' } as ListNodesOptions);
+            const result = await connector.listNodes({ folderPath: '/INSEE/ECO/GEN/CNA-2010-PIB' });
 
             expect(result.connectionNodeConfigs).toEqual([expect.objectContaining({ id: 'A.FR.PIB', typeId: 'object', folderPath: '/INSEE/ECO/GEN/CNA-2010-PIB' })]);
         });
@@ -154,7 +150,7 @@ describe('Connector', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             const connector = new Connector({} as never, []);
-            const topLevel = await connector.listNodes({ folderPath: '/BI' } as ListNodesOptions);
+            const topLevel = await connector.listNodes({ folderPath: '/BI' });
 
             // The category's id must be its name (not null / the string "null"), since that's what the app will use
             // to build the next folderPath when the user drills in.
@@ -162,7 +158,7 @@ describe('Connector', () => {
             expect(category).toEqual(expect.objectContaining({ id: 'MONEY AND BANKING', typeId: 'folder' }));
 
             // Drilling into that folder path must resolve back to the same category, not throw "invalid folder path".
-            const nextLevel = await connector.listNodes({ folderPath: `/BI/${category?.id}` } as ListNodesOptions);
+            const nextLevel = await connector.listNodes({ folderPath: `/BI/${String(category?.id)}` });
             expect(nextLevel.connectionNodeConfigs).toEqual([expect.objectContaining({ id: 'DS1', childCount: 12, typeId: 'folder' })]);
         });
 
@@ -176,7 +172,7 @@ describe('Connector', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             const connector = new Connector({} as never, []);
-            const result = await connector.listNodes({ folderPath: '/IMF' } as ListNodesOptions);
+            const result = await connector.listNodes({ folderPath: '/IMF' });
 
             expect(result.connectionNodeConfigs).toEqual([expect.objectContaining({ id: 'AFRREO', childCount: 1654, typeId: 'folder', folderPath: '/IMF' })]);
         });
@@ -188,7 +184,7 @@ describe('Connector', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             const connector = new Connector({} as never, []);
-            await expect(connector.listNodes({ folderPath: '/PROV/DS1/EXTRA' } as ListNodesOptions)).rejects.toThrow(/invalid folder path/i);
+            await expect(connector.listNodes({ folderPath: '/PROV/DS1/EXTRA' })).rejects.toThrow(/invalid folder path/i);
         });
 
         it('rejects a path segment with no matching category or dataset code', async () => {
@@ -198,18 +194,18 @@ describe('Connector', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             const connector = new Connector({} as never, []);
-            await expect(connector.listNodes({ folderPath: '/PROV/ZZZ' } as ListNodesOptions)).rejects.toThrow(/invalid folder path/i);
+            await expect(connector.listNodes({ folderPath: '/PROV/ZZZ' })).rejects.toThrow(/invalid folder path/i);
         });
 
         it('rejects an invalid folder path', async () => {
             const connector = new Connector({} as never, []);
-            await expect(connector.listNodes({ folderPath: 'no-leading-slash' } as ListNodesOptions)).rejects.toThrow(/invalid folder path/i);
+            await expect(connector.listNodes({ folderPath: 'no-leading-slash' })).rejects.toThrow(/invalid folder path/i);
         });
 
         it('surfaces a non-OK DBnomics response as an error', async () => {
             vi.stubGlobal('fetch', vi.fn().mockResolvedValue(buildFetchResponse({}, false)));
             const connector = new Connector({} as never, []);
-            await expect(connector.listNodes({ folderPath: '' } as ListNodesOptions)).rejects.toThrow(/failed with status 500/);
+            await expect(connector.listNodes({ folderPath: '' })).rejects.toThrow(/failed with status 500/);
         });
 
         it('serves a repeated request from the instance cache without re-fetching', async () => {
@@ -217,8 +213,8 @@ describe('Connector', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             const connector = new Connector({} as never, []);
-            await connector.listNodes({ folderPath: '' } as ListNodesOptions);
-            await connector.listNodes({ folderPath: '' } as ListNodesOptions);
+            await connector.listNodes({ folderPath: '' });
+            await connector.listNodes({ folderPath: '' });
 
             expect(fetchMock).toHaveBeenCalledTimes(1);
         });
@@ -230,14 +226,14 @@ describe('Connector', () => {
             const connector = new Connector({} as never, []);
             // Fill the cache past its entry cap (200) with distinct pages, then re-request the first (now-evicted) page.
             for (let offset = 0; offset <= 200; offset++) {
-                await connector.listNodes({ folderPath: '', limit: 1, offset } as ListNodesOptions);
+                await connector.listNodes({ folderPath: '', limit: 1, offset });
             }
             const callCountBeforeReRequest = fetchMock.mock.calls.length;
 
-            await connector.listNodes({ folderPath: '', limit: 1, offset: 0 } as ListNodesOptions); // Evicted -> re-fetches.
-            await connector.listNodes({ folderPath: '', limit: 1, offset: 200 } as ListNodesOptions); // Still cached -> no re-fetch.
+            await connector.listNodes({ folderPath: '', limit: 1, offset: 0 }); // Evicted -> re-fetches.
+            await connector.listNodes({ folderPath: '', limit: 1, offset: 200 }); // Still cached -> no re-fetch.
 
-            expect(fetchMock.mock.calls.length).toBe(callCountBeforeReRequest + 1);
+            expect(fetchMock).toHaveBeenCalledTimes(callCountBeforeReRequest + 1);
         });
     });
 
@@ -335,7 +331,7 @@ describe('Connector', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             const connector = new Connector({} as never, []);
-            const result = await connector.getInfo({ path: '/IMF' } as GetInfoOptions);
+            const result = await connector.getInfo({ path: '/IMF' });
 
             expect(result.info).toEqual(providerInfo);
         });
@@ -349,7 +345,7 @@ describe('Connector', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             const connector = new Connector({} as never, []);
-            const result = await connector.getInfo({ path: '/INSEE/ECO' } as GetInfoOptions);
+            const result = await connector.getInfo({ path: '/INSEE/ECO' });
 
             expect(result.info).toEqual({ code: 'ECO', name: 'Economy', doc_href: 'https://example.com/eco', children: [{ code: 'GEN', name: 'General' }] });
         });
@@ -365,7 +361,7 @@ describe('Connector', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             const connector = new Connector({} as never, []);
-            const result = await connector.getInfo({ path: '/INSEE/ECO/CNA-2010-PIB' } as GetInfoOptions);
+            const result = await connector.getInfo({ path: '/INSEE/ECO/CNA-2010-PIB' });
 
             expect(result.info).toEqual(datasetInfo);
         });
@@ -381,7 +377,7 @@ describe('Connector', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             const connector = new Connector({} as never, []);
-            const result = await connector.getInfo({ path: '/INSEE/ECO/CNA-2010-PIB/A.FR.PIB' } as GetInfoOptions);
+            const result = await connector.getInfo({ path: '/INSEE/ECO/CNA-2010-PIB/A.FR.PIB' });
 
             expect(result.info).toEqual(seriesInfo);
         });
@@ -397,8 +393,8 @@ describe('Connector', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             const connector = new Connector({} as never, []);
-            const datasetResult = await connector.getInfo({ path: '/IMF/AFRREO' } as GetInfoOptions);
-            const seriesResult = await connector.getInfo({ path: '/IMF/AFRREO/A.NGDP' } as GetInfoOptions);
+            const datasetResult = await connector.getInfo({ path: '/IMF/AFRREO' });
+            const seriesResult = await connector.getInfo({ path: '/IMF/AFRREO/A.NGDP' });
 
             expect(datasetResult.info).toEqual(datasetInfo);
             expect(seriesResult.info).toEqual(seriesInfo);
@@ -411,7 +407,7 @@ describe('Connector', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             const connector = new Connector({} as never, []);
-            await expect(connector.getInfo({ path: '/IMF/AFRREO/A.NGDP/EXTRA' } as GetInfoOptions)).rejects.toThrow(/invalid object path/i);
+            await expect(connector.getInfo({ path: '/IMF/AFRREO/A.NGDP/EXTRA' })).rejects.toThrow(/invalid object path/i);
         });
 
         it('reuses the cached category_tree fetch across getInfo calls for the same provider', async () => {
@@ -425,8 +421,8 @@ describe('Connector', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             const connector = new Connector({} as never, []);
-            await connector.getInfo({ path: '/INSEE' } as GetInfoOptions);
-            await connector.getInfo({ path: '/INSEE/ECO/CNA-2010-PIB' } as GetInfoOptions);
+            await connector.getInfo({ path: '/INSEE' });
+            await connector.getInfo({ path: '/INSEE/ECO/CNA-2010-PIB' });
 
             // Two distinct URLs are fetched (provider/tree, and the dataset), each exactly once -- the second
             // getInfo call reuses the already-cached provider/tree response rather than re-fetching it.
