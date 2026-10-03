@@ -138,7 +138,7 @@ export class Connector implements ExtendedConnectorInterface {
     }
 
     // Audit object content — see dpuse-connector-dropbox / dpuse-connector-file-store-emulator for a fuller reference
-    async auditObjectContent(options: AuditObjectContentOptions, chunk: (rowCount: number) => void): Promise<AuditObjectContentResult> {
+    async auditObjectContent(_options: AuditObjectContentOptions, _chunk: (rowCount: number) => void): Promise<AuditObjectContentResult> {
         this.abortController = new AbortController();
 
         try {
@@ -153,7 +153,7 @@ export class Connector implements ExtendedConnectorInterface {
     }
 
     // Find the folder path containing the specified object node — see dpuse-connector-dropbox / dpuse-connector-dexie-js
-    async findObject(options: FindObjectOptions): Promise<FindObjectResult> {
+    async findObject(_options: FindObjectOptions): Promise<FindObjectResult> {
         this.abortController = new AbortController();
 
         try {
@@ -205,11 +205,11 @@ export class Connector implements ExtendedConnectorInterface {
     }
 
     // Get a readable stream for the specified object node path — see dpuse-connector-dropbox for a fuller reference
-    async getReadableStream(options: GetReadableStreamOptions): Promise<ReadableStream<Uint8Array>> {
+    async getReadableStream(_options: GetReadableStreamOptions): Promise<ReadableStream<Uint8Array>> {
         this.abortController = new AbortController();
 
         try {
-            // eslint-disable-next-line unicorn/no-useless-promise-resolve-reject
+            // eslint-disable-next-line unicorn/no-useless-promise-resolve-reject -- Placeholder until this action is implemented.
             return await Promise.resolve({} as ReadableStream<Uint8Array>);
         } catch (error) {
             throw normalizeToError(error);

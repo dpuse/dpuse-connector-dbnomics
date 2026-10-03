@@ -31,7 +31,7 @@ function buildConnectorUtilities(): ConnectorUtilities {
     return {
         hasReadableStreamTransferSupport: () => false,
         inferValues: () => ({}) as never,
-        inferDataTypes: (parsedRecords) => ({ columnConfigs: [], hasHeaderRow: true, typedRecords: [] as never[] })
+        inferDataTypes: (_parsedRecords) => ({ columnConfigs: [], hasHeaderRow: true, typedRecords: [] as never[] })
     };
 }
 

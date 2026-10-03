@@ -1,6 +1,6 @@
 {
     "name": "@dpuse/dpuse-connector-dbnomics",
-    "version": "0.0.45",
+    "version": "0.0.46",
     "private": false,
     "description": "Provides access to economic data hosted by DBnomics.",
     "license": "MIT",
@@ -61,18 +61,18 @@
         "test": "node -e \"import('@dpuse/dpuse-development').then(m => m.testProject())\""
     },
     "dependencies": {
-        "@dpuse/dpuse-shared": "^0.3.869"
+        "@dpuse/dpuse-shared": "^1.0.2"
     },
     "devDependencies": {
-        "@dpuse/dpuse-development": "^0.3.817",
-        "@dpuse/eslint-config-dpuse": "^1.0.124",
+        "@dpuse/dpuse-development": "^1.0.3",
+        "@dpuse/eslint-config-dpuse": "^1.0.131",
         "@types/node": "^26.6.4",
-        "eslint": "^10.11.0",
+        "eslint": "^10.12.0",
         "prettier": "^3.9.9",
         "sonda": "^0.14.0",
         "typescript": "^6.0.3",
         "vite": "^8.3.2",
-        "vite-plugin-dts": "^5.1.1",
+        "vite-plugin-dts": "^5.1.2",
         "vitest": "^5.0.3",
         "wrangler": "^4.147.0"
     }
