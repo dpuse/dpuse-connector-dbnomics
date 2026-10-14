@@ -1,6 +1,6 @@
 {
     "name": "@dpuse/dpuse-connector-dbnomics",
-    "version": "1.0.106",
+    "version": "1.0.107",
     "private": false,
     "description": "Provides access to economic data hosted by DBnomics.",
     "license": "MIT",
@@ -64,7 +64,7 @@
         "@dpuse/dpuse-shared": "^1.0.2"
     },
     "devDependencies": {
-        "@dpuse/dpuse-development": "^1.0.113",
+        "@dpuse/dpuse-development": "^1.0.125",
         "@dpuse/eslint-config-dpuse": "^1.0.131",
         "@types/node": "^26.6.4",
         "eslint": "^10.12.0",
