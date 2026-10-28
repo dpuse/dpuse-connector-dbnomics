@@ -26,9 +26,10 @@ function buildRoutedFetchMock(routes: Record<string, unknown>): ReturnType<typeo
     });
 }
 
-// Minimal ConnectorUtilities stub — previewObject calls inferDataTypes; the other two methods aren't exercised here.
+// Minimal ConnectorUtilities stub — previewObject calls inferDataTypes; the other methods aren't exercised here.
 function buildConnectorUtilities(): ConnectorUtilities {
     return {
+        constructColumnAuditor: () => ({}) as never,
         hasReadableStreamTransferSupport: () => false,
         inferValues: () => ({}) as never,
         inferDataTypes: (_parsedRecords) => ({ columnConfigs: [], hasHeaderRow: true, typedRecords: [] as never[] })

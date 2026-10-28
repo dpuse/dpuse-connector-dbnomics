@@ -6,6 +6,7 @@ import type {
     ConnectorConfig,
     ConnectorInterface,
     ConnectorUtilities,
+    ContentAuditConfig,
     FindObjectOptions,
     FindObjectResult,
     GetInfoOptions,
@@ -144,7 +145,7 @@ export class Connector implements ExtendedConnectorInterface {
         try {
             await Promise.resolve();
             // Audit the series observations at options.path.
-            return { processedRowCount: 0, durationMs: 0 };
+            return { contentAuditConfig: {} as ContentAuditConfig };
         } catch (error) {
             throw normalizeToError(error);
         } finally {
