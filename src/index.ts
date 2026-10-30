@@ -324,7 +324,6 @@ export class Connector implements ExtendedConnectorInterface {
                 encodingId: undefined,
                 fileType: undefined,
                 hasHeaders: inferenceSummary.hasHeaderRow,
-                inferenceRecords: inferenceSummary.typedRecords,
                 parsedRecords,
                 recordDelimiterId: undefined,
                 size: undefined,
