@@ -15,8 +15,8 @@ import type {
     ListNodesOptions,
     ListNodesResult,
     ParsingRecord,
-    PreviewConfig,
     PreviewObjectOptions,
+    PreviewObjectResult,
     RecordRetrievalTypeId,
     RetrieveRecordsOptions,
     RetrieveRecordsSummary,
@@ -139,7 +139,7 @@ export class Connector implements ExtendedConnectorInterface {
     }
 
     // Audit object content — see dpuse-connector-dropbox / dpuse-connector-file-store-emulator for a fuller reference
-    async auditObjectContent(_options: AuditObjectContentOptions, _chunk: (rowCount: number) => void): Promise<AuditObjectContentResult> {
+    async auditObjectContent(_options: AuditObjectContentOptions, _chunk: (recordCount: number, byteCount: number) => void): Promise<AuditObjectContentResult> {
         this.abortController = new AbortController();
 
         try {
@@ -292,10 +292,11 @@ export class Connector implements ExtendedConnectorInterface {
     // follows: fetch the series once, then keep only the first PREVIEW_ROW_LIMIT rows for a quick look rather than
     // returning the full observation history. DBnomics has no server-side "first N observations" query param, so the
     // full series is fetched (small; a decades-long series is only a few KB) and truncated client-side.
-    async previewObject(options: PreviewObjectOptions): Promise<PreviewConfig> {
+    async previewObject(options: PreviewObjectOptions): Promise<PreviewObjectResult> {
         const { signal } = (this.abortController = new AbortController());
 
         try {
+            const asAt = Date.now();
             const startedAt = performance.now();
             const { providerCode, datasetCode, seriesCode } = establishSeriesIdentifiers(options.path);
 
@@ -316,19 +317,29 @@ export class Connector implements ExtendedConnectorInterface {
             const inferenceSummary = this.connectorUtilities.inferDataTypes(parsedRecords);
 
             return {
-                asAt: Date.now(),
-                columnConfigs: inferenceSummary.columnConfigs,
-                dataFormatId: 'json',
-                duration: performance.now() - startedAt,
-                encodingConfidenceLevel: undefined,
-                encodingId: undefined,
-                fileType: undefined,
-                hasHeaders: inferenceSummary.hasHeaderRow,
-                parsedRecords,
-                recordDelimiterId: undefined,
-                size: undefined,
-                text: undefined,
-                valueDelimiterId: undefined
+                contentAuditConfig: {
+                    asAt,
+                    byteCount: 0,
+                    columns: inferenceSummary.columnConfigs,
+                    commentLineCount: undefined,
+                    duration: performance.now() - startedAt,
+                    emptyLineCount: undefined,
+                    invalidFieldLengthCount: undefined,
+                    isComplete: series.period.length <= PREVIEW_ROW_LIMIT,
+                    lineCount: undefined,
+                    recordCount: dataRecords.length,
+                    sourceWaitDuration: undefined
+                },
+                previewConfig: { parsedRecords, size: undefined, text: undefined },
+                readConfig: {
+                    dataFormatId: 'json',
+                    encodingConfidenceLevel: undefined,
+                    encodingId: undefined,
+                    fileType: undefined,
+                    hasHeaders: inferenceSummary.hasHeaderRow,
+                    recordDelimiterId: undefined,
+                    valueDelimiterId: undefined
+                }
             };
         } catch (error) {
             throw normalizeToError(error);
