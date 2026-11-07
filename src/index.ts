@@ -14,7 +14,7 @@ import type {
     GetReadableStreamOptions,
     ListNodesOptions,
     ListNodesResult,
-    ParsingRecord,
+    ParsedRecord,
     PreviewObjectOptions,
     PreviewObjectResult,
     RecordRetrievalTypeId,
@@ -145,7 +145,7 @@ export class Connector implements ExtendedConnectorInterface {
         try {
             await Promise.resolve();
             // Audit the series observations at options.path.
-            return { contentAuditConfig: {} as ContentAuditConfig };
+            return { contentAuditConfig: {} as ContentAuditConfig, hasHeaders: false };
         } catch (error) {
             throw normalizeToError(error);
         } finally {
@@ -305,11 +305,11 @@ export class Connector implements ExtendedConnectorInterface {
             const series = data.series.docs[0];
             if (!series) throw new Error(`Series '${options.path}' not found.`);
 
-            const headerRecord: ParsingRecord = [
+            const headerRecord: ParsedRecord = [
                 { value: 'period', valueWasQuoted: false },
                 { value: 'value', valueWasQuoted: false }
             ];
-            const dataRecords: ParsingRecord[] = series.period.slice(0, PREVIEW_ROW_LIMIT).map((period, index) => [
+            const dataRecords: ParsedRecord[] = series.period.slice(0, PREVIEW_ROW_LIMIT).map((period, index) => [
                 { value: period, valueWasQuoted: false },
                 { value: series.value[index] == null ? null : String(series.value[index]), valueWasQuoted: false }
             ]);
@@ -330,13 +330,13 @@ export class Connector implements ExtendedConnectorInterface {
                     recordCount: dataRecords.length,
                     sourceWaitDuration: undefined
                 },
-                previewConfig: { parsedRecords, size: undefined, text: undefined },
-                readConfig: {
+                sampleConfig: { parsedRecords, size: undefined, text: undefined },
+                readingConfig: {
                     dataFormatId: 'json',
                     encodingConfidenceLevel: undefined,
                     encodingId: undefined,
                     fileType: undefined,
-                    hasHeaders: inferenceSummary.hasHeaderRow,
+                    hasHeaders: inferenceSummary.hasHeaders,
                     recordDelimiterId: undefined,
                     valueDelimiterId: undefined
                 }
@@ -351,7 +351,7 @@ export class Connector implements ExtendedConnectorInterface {
     // Retrieves all records from an object node using streaming and chunked processing — see dpuse-connector-dropbox
     async retrieveRecords(
         options: RetrieveRecordsOptions,
-        chunk: (typeId: RecordRetrievalTypeId, records: ParsingRecord[]) => void,
+        chunk: (typeId: RecordRetrievalTypeId, records: ParsedRecord[]) => void,
         complete: (result: RetrieveRecordsSummary) => void
     ): Promise<void> {
         this.abortController = new AbortController();
@@ -539,11 +539,9 @@ function establishSeriesIdentifiers(path: string): { providerCode: string; datas
 function constructFolderNodeConfig(folderPath: string, code: string, name: string, childCount: number | undefined): ConnectionNodeConfig {
     return {
         childCount,
-        childNodes: [],
         description: '',
         extension: undefined,
         folderPath,
-        handle: undefined,
         icon: null,
         iconDark: null,
         id: code, // DBnomics codes are stable, unique, natural keys — reused as-is rather than a random id.
@@ -560,11 +558,9 @@ function constructFolderNodeConfig(folderPath: string, code: string, name: strin
 function constructObjectNodeConfig(folderPath: string, code: string, name: string): ConnectionNodeConfig {
     return {
         childCount: undefined,
-        childNodes: [],
         extension: undefined,
         description: '',
         folderPath,
-        handle: undefined,
         icon: null,
         iconDark: null,
         id: code,

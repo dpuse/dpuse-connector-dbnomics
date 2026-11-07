@@ -31,8 +31,7 @@ function buildConnectorUtilities(): ConnectorUtilities {
     return {
         constructColumnAuditor: () => ({}) as never,
         hasReadableStreamTransferSupport: () => false,
-        inferValues: () => ({}) as never,
-        inferDataTypes: (_parsedRecords) => ({ columnConfigs: [], hasHeaderRow: true, typedRecords: [] as never[] })
+        inferDataTypes: (_parsedRecords) => ({ columnConfigs: [], hasHeaders: true, typedRecords: [] as never[] })
     };
 }
 
@@ -255,8 +254,8 @@ describe('Connector', () => {
             const result = await connector.previewObject({ path: '/IMF/AFRREO/A.NGDP' } as PreviewObjectOptions);
 
             expectProxiedFetch(fetchMock, 'https://api.db.nomics.world/v22/series/IMF/AFRREO/A.NGDP?observations=1');
-            expect(result.readConfig.dataFormatId).toBe('json');
-            expect(result.previewConfig.parsedRecords).toEqual([
+            expect(result.readingConfig.dataFormatId).toBe('json');
+            expect(result.sampleConfig.parsedRecords).toEqual([
                 [
                     { value: 'period', valueWasQuoted: false },
                     { value: 'value', valueWasQuoted: false }
@@ -290,7 +289,7 @@ describe('Connector', () => {
 
             // The category segments (ECO/ECO_GENERALE) are dropped -- series are only keyed on provider/dataset/seriesCode.
             expectProxiedFetch(fetchMock, 'https://api.db.nomics.world/v22/series/INSEE/CNA-2010-PIB/A.FR.PIB?observations=1');
-            expect(result.previewConfig.parsedRecords).toHaveLength(2);
+            expect(result.sampleConfig.parsedRecords).toHaveLength(2);
         });
 
         it('truncates to the preview row limit for a large series', async () => {
@@ -304,7 +303,7 @@ describe('Connector', () => {
             const connector = new Connector(buildConnectorUtilities(), []);
             const result = await connector.previewObject({ path: '/IMF/AFRREO/A.NGDP' } as PreviewObjectOptions);
 
-            expect(result.previewConfig.parsedRecords).toHaveLength(51); // 1 header row + 50 data rows, not all 60 observations.
+            expect(result.sampleConfig.parsedRecords).toHaveLength(51); // 1 header row + 50 data rows, not all 60 observations.
         });
 
         it('rejects an invalid object path', async () => {
