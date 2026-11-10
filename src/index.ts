@@ -3,7 +3,6 @@ import type {
     AuditObjectContentOptions,
     AuditObjectContentResult,
     ConnectionNodeConfig,
-    ConnectorConfig,
     ConnectorInterface,
     ConnectorUtilities,
     ContentAuditConfig,
@@ -23,9 +22,6 @@ import type {
     ToolConfig
 } from '@dpuse/dpuse-shared';
 import { ConnectorError, normalizeToError } from '@dpuse/dpuse-shared';
-
-// ── Data
-import config from '~/config.json';
 
 // ── Types ────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -115,15 +111,13 @@ const PREVIEW_ROW_LIMIT = 50; // Matches dpuse-connector-dexie-js's previewObjec
 // ── Connectors ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
 export class Connector implements ExtendedConnectorInterface {
-    abortController: AbortController | undefined;
-    readonly config: ConnectorConfig;
-    connectorUtilities: ConnectorUtilities;
+    private abortController: AbortController | undefined; // The latest operation's. An operation that ends clears it only if no later one has replaced it.
+    private readonly connectorUtilities: ConnectorUtilities;
+    private readonly toolConfigs;
     responseCache: Map<string, CacheEntry>;
-    readonly toolConfigs;
 
     constructor(connectorUtilities: ConnectorUtilities, toolConfigs: ToolConfig[]) {
         this.abortController = undefined;
-        this.config = config as ConnectorConfig;
         this.connectorUtilities = connectorUtilities;
         this.responseCache = new Map();
         this.toolConfigs = toolConfigs;
@@ -140,7 +134,8 @@ export class Connector implements ExtendedConnectorInterface {
 
     // Audit object content — see dpuse-connector-dropbox / dpuse-connector-file-store-emulator for a fuller reference
     async auditObjectContent(_options: AuditObjectContentOptions, _chunk: (recordCount: number, byteCount: number) => void): Promise<AuditObjectContentResult> {
-        this.abortController = new AbortController();
+        const abortController = new AbortController();
+        this.abortController = abortController;
 
         try {
             await Promise.resolve();
@@ -149,13 +144,14 @@ export class Connector implements ExtendedConnectorInterface {
         } catch (error) {
             throw normalizeToError(error);
         } finally {
-            this.abortController = undefined;
+            if (this.abortController === abortController) this.abortController = undefined;
         }
     }
 
     // Find the folder path containing the specified object node — see dpuse-connector-dropbox / dpuse-connector-dexie-js
     async findObject(_options: FindObjectOptions): Promise<FindObjectResult> {
-        this.abortController = new AbortController();
+        const abortController = new AbortController();
+        this.abortController = abortController;
 
         try {
             await Promise.resolve();
@@ -163,7 +159,7 @@ export class Connector implements ExtendedConnectorInterface {
         } catch (error) {
             throw normalizeToError(error);
         } finally {
-            this.abortController = undefined;
+            if (this.abortController === abortController) this.abortController = undefined;
         }
     }
 
@@ -173,7 +169,9 @@ export class Connector implements ExtendedConnectorInterface {
     // since this is metadata, not observation data. Path resolution itself is delegated to resolveGetInfoTarget,
     // the same style split used for listNodes/resolveCategoryTreeNode.
     async getInfo(options: GetInfoOptions): Promise<GetInfoResult> {
-        const { signal } = (this.abortController = new AbortController());
+        const abortController = new AbortController();
+        this.abortController = abortController;
+        const { signal } = abortController;
 
         try {
             const pathSegments = options.path.split('/');
@@ -201,13 +199,14 @@ export class Connector implements ExtendedConnectorInterface {
         } catch (error) {
             throw normalizeToError(error);
         } finally {
-            this.abortController = undefined;
+            if (this.abortController === abortController) this.abortController = undefined;
         }
     }
 
     // Get a readable stream for the specified object node path — see dpuse-connector-dropbox for a fuller reference
     async getReadableStream(_options: GetReadableStreamOptions): Promise<ReadableStream<Uint8Array>> {
-        this.abortController = new AbortController();
+        const abortController = new AbortController();
+        this.abortController = abortController;
 
         try {
             // eslint-disable-next-line unicorn/no-useless-promise-resolve-reject -- Placeholder until this action is implemented.
@@ -215,7 +214,7 @@ export class Connector implements ExtendedConnectorInterface {
         } catch (error) {
             throw normalizeToError(error);
         } finally {
-            this.abortController = undefined;
+            if (this.abortController === abortController) this.abortController = undefined;
         }
     }
 
@@ -227,7 +226,9 @@ export class Connector implements ExtendedConnectorInterface {
     // count is small (single/low-double digits), so options.limit/offset are ignored there and every child is
     // returned in one response.
     async listNodes(options: ListNodesOptions): Promise<ListNodesResult> {
-        const { signal } = (this.abortController = new AbortController());
+        const abortController = new AbortController();
+        this.abortController = abortController;
+        const { signal } = abortController;
 
         try {
             const folderPathSegments = options.folderPath.split('/');
@@ -284,7 +285,7 @@ export class Connector implements ExtendedConnectorInterface {
         } catch (error) {
             throw normalizeToError(error);
         } finally {
-            this.abortController = undefined;
+            if (this.abortController === abortController) this.abortController = undefined;
         }
     }
 
@@ -293,7 +294,9 @@ export class Connector implements ExtendedConnectorInterface {
     // returning the full observation history. DBnomics has no server-side "first N observations" query param, so the
     // full series is fetched (small; a decades-long series is only a few KB) and truncated client-side.
     async previewObject(options: PreviewObjectOptions): Promise<PreviewObjectResult> {
-        const { signal } = (this.abortController = new AbortController());
+        const abortController = new AbortController();
+        this.abortController = abortController;
+        const { signal } = abortController;
 
         try {
             const asAt = Date.now();
@@ -330,13 +333,14 @@ export class Connector implements ExtendedConnectorInterface {
                     recordCount: dataRecords.length,
                     sourceWaitDuration: undefined
                 },
-                sampleConfig: { parsedRecords, size: undefined, text: undefined },
+                sampleConfig: { issues: [], parsedRecords, size: undefined, text: undefined },
                 readingConfig: {
                     dataFormatId: 'json',
                     encodingConfidenceLevel: undefined,
                     encodingId: undefined,
                     fileType: undefined,
                     hasHeaders: inferenceSummary.hasHeaders,
+                    parserId: undefined,
                     recordDelimiterId: undefined,
                     valueDelimiterId: undefined
                 }
@@ -344,7 +348,7 @@ export class Connector implements ExtendedConnectorInterface {
         } catch (error) {
             throw normalizeToError(error);
         } finally {
-            this.abortController = undefined;
+            if (this.abortController === abortController) this.abortController = undefined;
         }
     }
 
@@ -354,7 +358,8 @@ export class Connector implements ExtendedConnectorInterface {
         chunk: (typeId: RecordRetrievalTypeId, records: ParsedRecord[]) => void,
         complete: (result: RetrieveRecordsSummary) => void
     ): Promise<void> {
-        this.abortController = new AbortController();
+        const abortController = new AbortController();
+        this.abortController = abortController;
 
         try {
             await Promise.resolve();
@@ -362,7 +367,7 @@ export class Connector implements ExtendedConnectorInterface {
         } catch (error) {
             throw normalizeToError(error);
         } finally {
-            this.abortController = undefined;
+            if (this.abortController === abortController) this.abortController = undefined;
         }
     }
 
@@ -388,7 +393,8 @@ export class Connector implements ExtendedConnectorInterface {
             body: JSON.stringify({ method: 'GET', url }),
             signal
         });
-        if (!response.ok) throw new ConnectorError(`DBnomics request to '${url}' failed with status ${String(response.status)}.`, 'dpuse-connector-dbnomics.index.fetchCachedJson');
+        if (!response.ok)
+            throw new ConnectorError(`DBnomics request to '${url}' failed with status ${String(response.status)}.`, 'dpuse-connector-dbnomics.Connector.fetchCachedJson');
         const value = (await response.json()) as T;
 
         this.responseCache.delete(url);

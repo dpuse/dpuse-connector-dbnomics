@@ -2,54 +2,18 @@ import { Connector } from '@/index';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ConnectorUtilities, PreviewObjectOptions } from '@dpuse/dpuse-shared';
 
-// ── Helpers ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ── Constants ────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 const PROXY_URL = 'https://api.dpuse.app/proxy';
-
-function buildFetchResponse(body: unknown, isOk = true): Response {
-    return { ok: isOk, status: isOk ? 200 : 500, json: () => Promise.resolve(body) } as unknown as Response;
-}
-
-// The connector's fetches go through dpuse-api's /proxy route (POST {method, url}) rather than hitting DBnomics
-// directly, so assertions check the proxied call shape instead of a direct GET to the target URL.
-function expectProxiedFetch(fetchMock: ReturnType<typeof vi.fn>, url: string): void {
-    expect(fetchMock).toHaveBeenCalledWith(PROXY_URL, expect.objectContaining({ method: 'POST', body: JSON.stringify({ method: 'GET', url }) }));
-}
-
-// Routes a proxied fetch to a fixture by the target URL it was asked to forward, so multi-call flows (e.g. fetch
-// the category tree, then fetch series) can be tested against distinct responses per URL instead of one canned body.
-function buildRoutedFetchMock(routes: Record<string, unknown>): ReturnType<typeof vi.fn> {
-    return vi.fn().mockImplementation((_target: string, init: { body: string }) => {
-        const { url } = JSON.parse(init.body) as { url: string };
-        if (!Object.hasOwn(routes, url)) throw new Error(`Unexpected proxied fetch to '${url}'.`);
-        return Promise.resolve(buildFetchResponse(routes[url]));
-    });
-}
-
-// Minimal ConnectorUtilities stub — previewObject calls inferDataTypes; the other methods aren't exercised here.
-function buildConnectorUtilities(): ConnectorUtilities {
-    return {
-        constructColumnAuditor: () => ({}) as never,
-        hasReadableStreamTransferSupport: () => false,
-        inferDataTypes: (_parsedRecords) => ({ columnConfigs: [], hasHeaders: true, typedRecords: [] as never[] })
-    };
-}
 
 // ── Tests ────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 describe('Connector', () => {
-    it('constructs with the static config and no active operation', () => {
-        const connector = new Connector({} as never, []);
-        expect(connector.config.id).toBe('dpuse-connector-dbnomics');
-        expect(connector.abortController).toBeUndefined();
-    });
-
     it('abortOperation is a no-op when nothing is running', () => {
         const connector = new Connector({} as never, []);
         expect(() => {
             connector.abortOperation();
         }).not.toThrow();
-        expect(connector.abortController).toBeUndefined();
     });
 
     describe('listNodes', () => {
@@ -430,3 +394,34 @@ describe('Connector', () => {
         });
     });
 });
+
+// ── Helpers ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+function buildFetchResponse(body: unknown, isOk = true): Response {
+    return { ok: isOk, status: isOk ? 200 : 500, json: () => Promise.resolve(body) } as unknown as Response;
+}
+
+// The connector's fetches go through dpuse-api's /proxy route (POST {method, url}) rather than hitting DBnomics
+// directly, so assertions check the proxied call shape instead of a direct GET to the target URL.
+function expectProxiedFetch(fetchMock: ReturnType<typeof vi.fn>, url: string): void {
+    expect(fetchMock).toHaveBeenCalledWith(PROXY_URL, expect.objectContaining({ method: 'POST', body: JSON.stringify({ method: 'GET', url }) }));
+}
+
+// Routes a proxied fetch to a fixture by the target URL it was asked to forward, so multi-call flows (e.g. fetch
+// the category tree, then fetch series) can be tested against distinct responses per URL instead of one canned body.
+function buildRoutedFetchMock(routes: Record<string, unknown>): ReturnType<typeof vi.fn> {
+    return vi.fn().mockImplementation((_target: string, init: { body: string }) => {
+        const { url } = JSON.parse(init.body) as { url: string };
+        if (!Object.hasOwn(routes, url)) throw new Error(`Unexpected proxied fetch to '${url}'.`);
+        return Promise.resolve(buildFetchResponse(routes[url]));
+    });
+}
+
+// Minimal ConnectorUtilities stub — previewObject calls inferDataTypes; the other methods aren't exercised here.
+function buildConnectorUtilities(): ConnectorUtilities {
+    return {
+        constructColumnAuditor: () => ({}) as never,
+        hasReadableStreamTransferSupport: () => false,
+        inferDataTypes: (_parsedRecords) => ({ columnConfigs: [], hasHeaders: true, typedRecords: [] as never[] })
+    };
+}
