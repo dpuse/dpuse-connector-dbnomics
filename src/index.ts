@@ -1,24 +1,15 @@
 // ── DPUse Framework
 import type {
-    AuditObjectContentOptions,
-    AuditObjectContentResult,
     ConnectionNodeConfig,
     ConnectorInterface,
     ConnectorUtilities,
-    ContentAuditConfig,
-    FindObjectOptions,
-    FindObjectResult,
     GetInfoOptions,
     GetInfoResult,
-    GetReadableStreamOptions,
     ListNodesOptions,
     ListNodesResult,
     ParsedRecord,
     PreviewObjectOptions,
     PreviewObjectResult,
-    RecordRetrievalTypeId,
-    RetrieveRecordsOptions,
-    RetrieveRecordsSummary,
     ToolConfig
 } from '@dpuse/dpuse-shared';
 import { ConnectorError, normalizeToError } from '@dpuse/dpuse-shared';
@@ -132,37 +123,6 @@ export class Connector implements ExtendedConnectorInterface {
         this.abortController = undefined;
     }
 
-    // Audit object content — see dpuse-connector-dropbox / dpuse-connector-file-store-emulator for a fuller reference
-    async auditObjectContent(_options: AuditObjectContentOptions, _chunk: (recordCount: number, byteCount: number) => void): Promise<AuditObjectContentResult> {
-        const abortController = new AbortController();
-        this.abortController = abortController;
-
-        try {
-            await Promise.resolve();
-            // Audit the series observations at options.path.
-            return { contentAuditConfig: {} as ContentAuditConfig, hasHeaders: false };
-        } catch (error) {
-            throw normalizeToError(error);
-        } finally {
-            if (this.abortController === abortController) this.abortController = undefined;
-        }
-    }
-
-    // Find the folder path containing the specified object node — see dpuse-connector-dropbox / dpuse-connector-dexie-js
-    async findObject(_options: FindObjectOptions): Promise<FindObjectResult> {
-        const abortController = new AbortController();
-        this.abortController = abortController;
-
-        try {
-            await Promise.resolve();
-            throw new Error('Not found.');
-        } catch (error) {
-            throw normalizeToError(error);
-        } finally {
-            if (this.abortController === abortController) this.abortController = undefined;
-        }
-    }
-
     // Get metadata for the node at the specified path — provider, category, dataset, or series. Returns DBnomics'
     // own response object as-is (unshaped) until a common cross-provider info shape has been reviewed. Modelled on
     // previewObject: resolve the path once, fetch (or reuse the already-cached) metadata, no row-truncation needed
@@ -196,21 +156,6 @@ export class Connector implements ExtendedConnectorInterface {
                 default:
                     throw new Error(`${ERROR_INVALID_OBJECT_PATH} '${options.path}'.`);
             }
-        } catch (error) {
-            throw normalizeToError(error);
-        } finally {
-            if (this.abortController === abortController) this.abortController = undefined;
-        }
-    }
-
-    // Get a readable stream for the specified object node path — see dpuse-connector-dropbox for a fuller reference
-    async getReadableStream(_options: GetReadableStreamOptions): Promise<ReadableStream<Uint8Array>> {
-        const abortController = new AbortController();
-        this.abortController = abortController;
-
-        try {
-            // eslint-disable-next-line unicorn/no-useless-promise-resolve-reject -- Placeholder until this action is implemented.
-            return await Promise.resolve({} as ReadableStream<Uint8Array>);
         } catch (error) {
             throw normalizeToError(error);
         } finally {
@@ -345,25 +290,6 @@ export class Connector implements ExtendedConnectorInterface {
                     valueDelimiterId: undefined
                 }
             };
-        } catch (error) {
-            throw normalizeToError(error);
-        } finally {
-            if (this.abortController === abortController) this.abortController = undefined;
-        }
-    }
-
-    // Retrieves all records from an object node using streaming and chunked processing — see dpuse-connector-dropbox
-    async retrieveRecords(
-        options: RetrieveRecordsOptions,
-        chunk: (typeId: RecordRetrievalTypeId, records: ParsedRecord[]) => void,
-        complete: (result: RetrieveRecordsSummary) => void
-    ): Promise<void> {
-        const abortController = new AbortController();
-        this.abortController = abortController;
-
-        try {
-            await Promise.resolve();
-            complete({} as RetrieveRecordsSummary);
         } catch (error) {
             throw normalizeToError(error);
         } finally {
