@@ -7,7 +7,6 @@
         "en": "DBnomics is a free platform that aggregates publicly available economic data from national and international statistical institutions, as well as researchers and private companies. All data is standardized into a common format to simplify search, access, and analysis."
     },
     "actionNames": [
-        "abortOperation",
         "getInfo",
         "listNodes",
         "previewObject"
@@ -33,5 +32,5 @@
     "vendorAccountURL": "https://db.nomics.world/login",
     "vendorDocumentationURL": "https://docs.db.nomics.world/",
     "vendorHomeURL": "https://db.nomics.world/",
-    "version": "1.0.119"
+    "version": "1.0.120"
 }

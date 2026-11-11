@@ -9,11 +9,15 @@ const PROXY_URL = 'https://api.dpuse.app/proxy';
 // ── Tests ────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 describe('Connector', () => {
-    it('abortOperation is a no-op when nothing is running', () => {
-        const connector = new Connector({} as never, []);
-        expect(() => {
-            connector.abortOperation();
-        }).not.toThrow();
+    it("hands its request's signal to the fetch, so aborting the request stops it", async () => {
+        const abortController = new AbortController();
+        abortController.abort(new Error('Aborted.'));
+        const fetchMock = vi.fn((_url: string, init: { signal: AbortSignal }) => Promise.reject(init.signal.reason as Error));
+        vi.stubGlobal('fetch', fetchMock);
+
+        await expect(new Connector({} as never, []).listNodes({ folderPath: '', signal: abortController.signal })).rejects.toThrow('Aborted.');
+        expect(fetchMock.mock.calls[0]?.[1].signal).toBe(abortController.signal);
+        vi.unstubAllGlobals();
     });
 
     describe('listNodes', () => {

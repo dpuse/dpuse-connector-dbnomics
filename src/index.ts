@@ -12,7 +12,7 @@ import type {
     PreviewObjectResult,
     ToolConfig
 } from '@dpuse/dpuse-shared';
-import { ConnectorError, normalizeToError } from '@dpuse/dpuse-shared';
+import { ConnectorError, normalizeToError, resolveRequestSignal } from '@dpuse/dpuse-shared';
 
 // ── Types ────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -102,13 +102,11 @@ const PREVIEW_ROW_LIMIT = 50; // Matches dpuse-connector-dexie-js's previewObjec
 // ── Connectors ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
 export class Connector implements ExtendedConnectorInterface {
-    private abortController: AbortController | undefined; // The latest operation's. An operation that ends clears it only if no later one has replaced it.
     private readonly connectorUtilities: ConnectorUtilities;
     private readonly toolConfigs;
     responseCache: Map<string, CacheEntry>;
 
     constructor(connectorUtilities: ConnectorUtilities, toolConfigs: ToolConfig[]) {
-        this.abortController = undefined;
         this.connectorUtilities = connectorUtilities;
         this.responseCache = new Map();
         this.toolConfigs = toolConfigs;
@@ -116,22 +114,13 @@ export class Connector implements ExtendedConnectorInterface {
 
     // Actions ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-    // Abort the currently running operation
-    abortOperation(): void {
-        if (!this.abortController) return;
-        this.abortController.abort();
-        this.abortController = undefined;
-    }
-
     // Get metadata for the node at the specified path — provider, category, dataset, or series. Returns DBnomics'
     // own response object as-is (unshaped) until a common cross-provider info shape has been reviewed. Modelled on
     // previewObject: resolve the path once, fetch (or reuse the already-cached) metadata, no row-truncation needed
     // since this is metadata, not observation data. Path resolution itself is delegated to resolveGetInfoTarget,
     // the same style split used for listNodes/resolveCategoryTreeNode.
     async getInfo(options: GetInfoOptions): Promise<GetInfoResult> {
-        const abortController = new AbortController();
-        this.abortController = abortController;
-        const { signal } = abortController;
+        const signal = resolveRequestSignal(options);
 
         try {
             const pathSegments = options.path.split('/');
@@ -158,8 +147,6 @@ export class Connector implements ExtendedConnectorInterface {
             }
         } catch (error) {
             throw normalizeToError(error);
-        } finally {
-            if (this.abortController === abortController) this.abortController = undefined;
         }
     }
 
@@ -171,9 +158,7 @@ export class Connector implements ExtendedConnectorInterface {
     // count is small (single/low-double digits), so options.limit/offset are ignored there and every child is
     // returned in one response.
     async listNodes(options: ListNodesOptions): Promise<ListNodesResult> {
-        const abortController = new AbortController();
-        this.abortController = abortController;
-        const { signal } = abortController;
+        const signal = resolveRequestSignal(options);
 
         try {
             const folderPathSegments = options.folderPath.split('/');
@@ -229,8 +214,6 @@ export class Connector implements ExtendedConnectorInterface {
             return buildListNodesResult(connectionNodeConfigs, 0, resolved.nodes.length);
         } catch (error) {
             throw normalizeToError(error);
-        } finally {
-            if (this.abortController === abortController) this.abortController = undefined;
         }
     }
 
@@ -239,9 +222,7 @@ export class Connector implements ExtendedConnectorInterface {
     // returning the full observation history. DBnomics has no server-side "first N observations" query param, so the
     // full series is fetched (small; a decades-long series is only a few KB) and truncated client-side.
     async previewObject(options: PreviewObjectOptions): Promise<PreviewObjectResult> {
-        const abortController = new AbortController();
-        this.abortController = abortController;
-        const { signal } = abortController;
+        const signal = resolveRequestSignal(options);
 
         try {
             const asAt = Date.now();
@@ -292,8 +273,6 @@ export class Connector implements ExtendedConnectorInterface {
             };
         } catch (error) {
             throw normalizeToError(error);
-        } finally {
-            if (this.abortController === abortController) this.abortController = undefined;
         }
     }
 
