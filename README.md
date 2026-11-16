@@ -36,27 +36,28 @@ Connectors conform to a unified interface contract by implementing a specific su
 
 This connector is a Source connector that supports only read actions. Connectors can also function as a Destination (write-only) or Bidirectional (read/write), depending on the actions they support. The table below lists all connector actions and highlights those supported by this connector.
 
-| Action               | Supported |
-| :------------------- | :-------: |
-| Abort Operation      |           |
-| Audit Object Content |           |
-| Close Store          |           |
-| Create Object        |           |
-| Describe Connection  |           |
-| Drop Object          |           |
-| Find Object          |           |
-| Get Info             |     ✓     |
-| Get Readable Stream  |           |
-| Get Record           |           |
-| List Nodes           |     ✓     |
-| Load Object Records  |           |
-| Open Store           |           |
-| Preview Object       |     ✓     |
-| Query Records        |           |
-| Remove Records       |           |
-| Retrieve Chunks      |           |
-| Retrieve Records     |           |
-| Upsert Records       |           |
+| Action                        | Supported |
+| :---------------------------- | :-------: |
+| Audit Object Content          |           |
+| Close Store                   |           |
+| Create Object                 |           |
+| Describe Connection           |           |
+| Drop Object                   |           |
+| Find Object                   |           |
+| Get Info                      |     ✓     |
+| Get Object                    |           |
+| Get Readable Stream           |           |
+| Get Record                    |           |
+| Index Object Structure        |           |
+| List Nodes                    |     ✓     |
+| List Object Structure Entries |           |
+| Load Object Records           |           |
+| Open Store                    |           |
+| Preview Object                |     ✓     |
+| Query Records                 |           |
+| Remove Records                |           |
+| Retrieve Records              |           |
+| Upsert Records                |           |
 
 <!-- SUPPORTED_ACTIONS_END -->
 
@@ -88,14 +89,14 @@ License data is updated each time `npm run document` is run, using [license-chec
 
 | Dependency                                                   | Version | License(s) | Document                                                              |
 | :----------------------------------------------------------- | :-----: | :--------- | :-------------------------------------------------------------------- |
-| [@dpuse/dpuse-shared](https://github.com/dpuse/dpuse-shared) | 1.0.212 | MIT        | [LICENSE](licenses/downloads/@dpuse/dpuse-shared@1.0.212-LICENSE.txt) |
+| [@dpuse/dpuse-shared](https://github.com/dpuse/dpuse-shared) | 1.0.229 | MIT        | [LICENSE](licenses/downloads/@dpuse/dpuse-shared@1.0.229-LICENSE.txt) |
 | [valibot](https://github.com/open-circle/valibot)            |  1.5.0  | MIT        | [LICENSE](licenses/downloads/valibot@1.5.0-LICENSE.txt)               |
 
 ### Dependency Tree
 
 The dependency tree below shows how each package in the table above is reached — direct and transitive — along with its installed version, release date, and update status. A package that does not ship itself, such as one whose parts are bundled separately, is left out and what ships beneath it is shown in its place. Packages flagged ❗ have a newer version available; ⚠️ indicates a package that hasn't been updated in the last 6 months or longer. Neither flag necessarily indicates a problem: we let new releases stabilise before upgrading, and some packages are mature and stable (have limited or no dependencies), so they require no active development.
 
-- **[@dpuse/dpuse-shared](https://github.com/dpuse/dpuse-shared)** 1.0.212 — this month: 2026-11-11
+- **[@dpuse/dpuse-shared](https://github.com/dpuse/dpuse-shared)** 1.0.229 — this month: 2026-11-16
     - **[valibot](https://github.com/open-circle/valibot)** 1.5.0 — 2 mths ago: 2026-09-09
 
 <!-- DEPENDENCY_LICENSES_END -->
@@ -110,10 +111,10 @@ _Note: Sonda's Vite reports currently exclude CSS files, since Vite does not gen
 
 | Chunk/Module/File                                                     | Composition                                                                                   |
 | :-------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------- |
-| **dist/dpuse-connector-dbnomics.es.js**                               | 17.1&nbsp;kB&nbsp;·&nbsp;gzip&nbsp;5.0&nbsp;kB&nbsp;·&nbsp;100.0%&nbsp;of&nbsp;the&nbsp;build |
-| &nbsp;&nbsp;&nbsp;&nbsp;@dpuse/dpuse-shared → dist/dpuse-shared.es.js | `█████████░░░░░░░░░░░`&nbsp;47.1%&nbsp;·&nbsp;8.1&nbsp;kB                                     |
-| &nbsp;&nbsp;&nbsp;&nbsp;src → index.ts                                | `████████░░░░░░░░░░░░`&nbsp;41.9%&nbsp;·&nbsp;7.2&nbsp;kB                                     |
-| &nbsp;&nbsp;&nbsp;&nbsp;(bundler output, whitespace & JSON)           | `██░░░░░░░░░░░░░░░░░░`&nbsp;11.0%&nbsp;·&nbsp;1.9&nbsp;kB                                     |
+| **dist/dpuse-connector-dbnomics.es.js**                               | 18.3&nbsp;kB&nbsp;·&nbsp;gzip&nbsp;5.2&nbsp;kB&nbsp;·&nbsp;100.0%&nbsp;of&nbsp;the&nbsp;build |
+| &nbsp;&nbsp;&nbsp;&nbsp;@dpuse/dpuse-shared → dist/dpuse-shared.es.js | `██████████░░░░░░░░░░`&nbsp;50.6%&nbsp;·&nbsp;9.3&nbsp;kB                                     |
+| &nbsp;&nbsp;&nbsp;&nbsp;src → index.ts                                | `████████░░░░░░░░░░░░`&nbsp;38.5%&nbsp;·&nbsp;7.1&nbsp;kB                                     |
+| &nbsp;&nbsp;&nbsp;&nbsp;(bundler output, whitespace & JSON)           | `██░░░░░░░░░░░░░░░░░░`&nbsp;10.9%&nbsp;·&nbsp;2.0&nbsp;kB                                     |
 
 Bars show each row's share of its output file.
 
