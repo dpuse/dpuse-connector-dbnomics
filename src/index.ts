@@ -234,14 +234,10 @@ export class Connector implements ExtendedConnectorInterface {
             const series = data.series.docs[0];
             if (!series) throw new Error(`Series '${options.path}' not found.`);
 
-            const headerRecord: ParsedRecord = [
-                { value: 'period', valueWasQuoted: false },
-                { value: 'value', valueWasQuoted: false }
-            ];
-            const dataRecords: ParsedRecord[] = series.period.slice(0, PREVIEW_ROW_LIMIT).map((period, index) => [
-                { value: period, valueWasQuoted: false },
-                { value: series.value[index] == null ? null : String(series.value[index]), valueWasQuoted: false }
-            ]);
+            const headerRecord: ParsedRecord = ['period', 'value'];
+            const dataRecords: ParsedRecord[] = series.period
+                .slice(0, PREVIEW_ROW_LIMIT)
+                .map((period, index) => [period, series.value[index] == null ? null : String(series.value[index])]);
             const parsedRecords = [headerRecord, ...dataRecords];
             const inferenceSummary = this.connectorUtilities.inferDataTypes(parsedRecords);
 

@@ -224,22 +224,10 @@ describe('Connector', () => {
             expectProxiedFetch(fetchMock, 'https://api.db.nomics.world/v22/series/IMF/AFRREO/A.NGDP?observations=1');
             expect(result.readingConfig.dataFormatId).toBe('json');
             expect(result.sampleConfig.parsedRecords).toEqual([
-                [
-                    { value: 'period', valueWasQuoted: false },
-                    { value: 'value', valueWasQuoted: false }
-                ],
-                [
-                    { value: '2000', valueWasQuoted: false },
-                    { value: '1.1', valueWasQuoted: false }
-                ],
-                [
-                    { value: '2001', valueWasQuoted: false },
-                    { value: '2.2', valueWasQuoted: false }
-                ],
-                [
-                    { value: '2002', valueWasQuoted: false },
-                    { value: null, valueWasQuoted: false }
-                ]
+                ['period', 'value'],
+                ['2000', '1.1'],
+                ['2001', '2.2'],
+                ['2002', null]
             ]);
         });
 
