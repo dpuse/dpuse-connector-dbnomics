@@ -414,6 +414,7 @@ function buildConnectorUtilities(): ConnectorUtilities {
     return {
         constructColumnAuditor: () => ({}) as never,
         hasReadableStreamTransferSupport: () => false,
-        inferDataTypes: (_parsedRecords) => ({ columnConfigs: [], hasHeaders: true, typedRecords: [] as never[] })
+        inferDataTypes: (_parsedRecords) => ({ columnConfigs: [], hasHeaders: true, typedRecords: [] as never[] }),
+        isLogged: false
     };
 }
