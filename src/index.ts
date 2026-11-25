@@ -10,6 +10,9 @@ import type {
     ParsedRecord,
     PreviewObjectOptions,
     PreviewObjectResult,
+    RetrieveRecordsChunk,
+    RetrieveRecordsOptions,
+    RetrieveRecordsSummary,
     ToolConfig
 } from '@dpuse/dpuse-shared';
 import { ConnectorError, normalizeToError, resolveRequestSignal } from '@dpuse/dpuse-shared';
@@ -98,6 +101,7 @@ const DEFAULT_PAGE_SIZE = 100;
 const ERROR_INVALID_FOLDER_PATH = 'Encountered invalid folder path';
 const ERROR_INVALID_OBJECT_PATH = 'Encountered invalid object path';
 const PREVIEW_ROW_LIMIT = 50; // Matches dpuse-connector-dexie-js's previewObject row limit.
+const DEFAULT_RETRIEVE_CHUNK_SIZE = 10_000; // Matches dpuse-connector-dexie-js's retrieveRecords chunk size.
 
 // ── Connectors ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -267,6 +271,36 @@ export class Connector implements ExtendedConnectorInterface {
                     valueDelimiterId: undefined
                 }
             };
+        } catch (error) {
+            throw normalizeToError(error);
+        }
+    }
+
+    // Retrieves every observation of a series as the same text records the preview shows, header first, so the load
+    // reads them the way the preview did. DBnomics returns a whole series in one response, so the chunks only split
+    // what is already in memory, for a store that writes a chunk at a time.
+    async *retrieveRecords(options: RetrieveRecordsOptions): AsyncGenerator<RetrieveRecordsChunk, RetrieveRecordsSummary, undefined> {
+        const signal = resolveRequestSignal(options);
+
+        try {
+            const { providerCode, datasetCode, seriesCode } = establishSeriesIdentifiers(options.path);
+
+            const fetchStartedAt = performance.now();
+            const url = `${API_BASE_URL}/series/${providerCode}/${datasetCode}/${seriesCode}?observations=1`;
+            const data = await this.fetchCachedJson<SeriesObservationsResponse>(url, signal);
+            const sourceWaitDuration = performance.now() - fetchStartedAt;
+            const series = data.series.docs[0];
+            if (!series) throw new Error(`Series '${options.path}' not found.`);
+
+            const headerRecord: ParsedRecord = ['period', 'value'];
+            const dataRecords: ParsedRecord[] = series.period.map((period, index) => [period, series.value[index] == null ? null : String(series.value[index])]);
+            const parsedRecords = [headerRecord, ...dataRecords];
+            const chunkSize = options.chunkSize ?? DEFAULT_RETRIEVE_CHUNK_SIZE;
+            for (let startIndex = 0; startIndex < parsedRecords.length; startIndex += chunkSize) {
+                signal.throwIfAborted();
+                yield { records: parsedRecords.slice(startIndex, startIndex + chunkSize), typeId: 'parsingRecordArray' };
+            }
+            return { recordCount: dataRecords.length, sourceWaitDuration };
         } catch (error) {
             throw normalizeToError(error);
         }

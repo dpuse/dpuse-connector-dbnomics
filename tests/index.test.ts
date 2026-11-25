@@ -1,6 +1,6 @@
 import { Connector } from '@/index';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { ConnectorUtilities, PreviewObjectOptions } from '@dpuse/dpuse-shared';
+import type { ConnectorUtilities, PreviewObjectOptions, RetrieveRecordsChunk, RetrieveRecordsOptions, RetrieveRecordsSummary } from '@dpuse/dpuse-shared';
 
 // ── Constants ────────────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -274,6 +274,72 @@ describe('Connector', () => {
         });
     });
 
+    describe('retrieveRecords', () => {
+        afterEach(() => {
+            vi.unstubAllGlobals();
+        });
+
+        it('retrieves every observation of a series as header + observation rows', async () => {
+            const periods = Array.from({ length: 60 }, (_, index) => String(2000 + index));
+            const values = Array.from({ length: 60 }, (_, index) => (index === 59 ? null : index));
+            const fetchMock = vi
+                .fn()
+                .mockResolvedValue(buildFetchResponse({ series: { docs: [{ series_code: 'A.NGDP', series_name: 'GDP', period: periods, value: values }], num_found: 1 } }));
+            vi.stubGlobal('fetch', fetchMock);
+
+            const connector = new Connector(buildConnectorUtilities(), []);
+            const { chunks, summary } = await collectRetrieveRecords(connector, buildRetrieveRecordsOptions({ path: '/IMF/AFRREO/A.NGDP' }));
+
+            expectProxiedFetch(fetchMock, 'https://api.db.nomics.world/v22/series/IMF/AFRREO/A.NGDP?observations=1');
+            const records = chunks.flatMap((chunk) => chunk.records);
+            expect(chunks.every((chunk) => chunk.typeId === 'parsingRecordArray')).toBe(true);
+            expect(records).toHaveLength(61); // Every observation, unlike the preview's 50.
+            expect(records[0]).toEqual(['period', 'value']);
+            expect(records[1]).toEqual(['2000', '0']);
+            expect(records[60]).toEqual(['2059', null]);
+            expect(summary.recordCount).toBe(60);
+        });
+
+        it('splits the records into chunks of the requested size', async () => {
+            const fetchMock = vi.fn().mockResolvedValue(
+                buildFetchResponse({
+                    series: { docs: [{ series_code: 'A.NGDP', series_name: 'GDP', period: ['2000', '2001', '2002', '2003'], value: [1, 2, 3, 4] }], num_found: 1 }
+                })
+            );
+            vi.stubGlobal('fetch', fetchMock);
+
+            const connector = new Connector(buildConnectorUtilities(), []);
+            const { chunks } = await collectRetrieveRecords(connector, buildRetrieveRecordsOptions({ chunkSize: 2, path: '/IMF/AFRREO/A.NGDP' }));
+
+            expect(chunks.map((chunk) => chunk.records.length)).toEqual([2, 2, 1]);
+        });
+
+        it('stops when its signal is aborted', async () => {
+            const abortController = new AbortController();
+            abortController.abort(new Error('Aborted.'));
+            vi.stubGlobal(
+                'fetch',
+                vi.fn((_url: string, init: { signal: AbortSignal }) => Promise.reject(init.signal.reason as Error))
+            );
+
+            const connector = new Connector(buildConnectorUtilities(), []);
+            await expect(collectRetrieveRecords(connector, buildRetrieveRecordsOptions({ path: '/IMF/AFRREO/A.NGDP', signal: abortController.signal }))).rejects.toThrow(
+                'Aborted.'
+            );
+        });
+
+        it('rejects an invalid object path', async () => {
+            const connector = new Connector(buildConnectorUtilities(), []);
+            await expect(collectRetrieveRecords(connector, buildRetrieveRecordsOptions({ path: '/IMF/AFRREO' }))).rejects.toThrow(/invalid object path/i);
+        });
+
+        it('rejects when the series is not found', async () => {
+            vi.stubGlobal('fetch', vi.fn().mockResolvedValue(buildFetchResponse({ series: { docs: [], num_found: 0 } })));
+            const connector = new Connector(buildConnectorUtilities(), []);
+            await expect(collectRetrieveRecords(connector, buildRetrieveRecordsOptions({ path: '/IMF/AFRREO/UNKNOWN' }))).rejects.toThrow(/not found/i);
+        });
+    });
+
     describe('getInfo', () => {
         afterEach(() => {
             vi.unstubAllGlobals();
@@ -417,4 +483,18 @@ function buildConnectorUtilities(): ConnectorUtilities {
         inferDataTypes: (_parsedRecords) => ({ columnConfigs: [], hasHeaders: true, typedRecords: [] as never[] }),
         isLogged: false
     };
+}
+
+function buildRetrieveRecordsOptions(overrides: Partial<RetrieveRecordsOptions> & Pick<RetrieveRecordsOptions, 'path'>): RetrieveRecordsOptions {
+    return { chunkSize: undefined, dataFormatId: 'json', encodingId: undefined, parserId: undefined, valueDelimiterId: undefined, ...overrides };
+}
+
+async function collectRetrieveRecords(connector: Connector, options: RetrieveRecordsOptions): Promise<{ chunks: RetrieveRecordsChunk[]; summary: RetrieveRecordsSummary }> {
+    const chunks: RetrieveRecordsChunk[] = [];
+    const generator = connector.retrieveRecords(options);
+    for (;;) {
+        const next = await generator.next();
+        if (next.done === true) return { chunks, summary: next.value };
+        chunks.push(next.value);
+    }
 }
