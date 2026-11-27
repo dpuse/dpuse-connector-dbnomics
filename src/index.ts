@@ -243,7 +243,8 @@ export class Connector implements ExtendedConnectorInterface {
                 .slice(0, PREVIEW_ROW_LIMIT)
                 .map((period, index) => [period, series.value[index] == null ? null : String(series.value[index])]);
             const parsedRecords = [headerRecord, ...dataRecords];
-            const inferenceSummary = this.connectorUtilities.inferDataTypes(parsedRecords);
+            const isComplete = series.period.length <= PREVIEW_ROW_LIMIT;
+            const inferenceSummary = this.connectorUtilities.inferDataTypes(parsedRecords, undefined, undefined, isComplete);
 
             return {
                 contentAuditConfig: {
@@ -254,7 +255,7 @@ export class Connector implements ExtendedConnectorInterface {
                     duration: performance.now() - startedAt,
                     emptyLineCount: undefined,
                     invalidFieldLengthCount: undefined,
-                    isComplete: series.period.length <= PREVIEW_ROW_LIMIT,
+                    isComplete,
                     lineCount: undefined,
                     recordCount: dataRecords.length,
                     sourceWaitDuration: undefined

@@ -1,5 +1,5 @@
 {
-  "version": "1.0.123",
+  "version": "1.0.124",
   "name": "@dpuse/dpuse-connector-dbnomics",
   "dependencies": {
     "@dpuse/dpuse-development": {
@@ -123,7 +123,7 @@
           }
         },
         "@dpuse/dpuse-shared": {
-          "version": "1.0.252"
+          "version": "1.0.253"
         },
         "npm-check-updates": {
           "version": "23.1.1",
@@ -199,8 +199,8 @@
       }
     },
     "@dpuse/dpuse-shared": {
-      "version": "1.0.252",
-      "resolved": "https://registry.npmjs.org/@dpuse/dpuse-shared/-/dpuse-shared-1.0.252.tgz",
+      "version": "1.0.253",
+      "resolved": "https://registry.npmjs.org/@dpuse/dpuse-shared/-/dpuse-shared-1.0.253.tgz",
       "overridden": false,
       "dependencies": {
         "file-type": {
@@ -683,7 +683,7 @@
                   "overridden": false
                 },
                 "source-map-js": {
-                  "version": "1.2.2"
+                  "version": "1.2.4"
                 }
               }
             },
@@ -1053,8 +1053,8 @@
       }
     },
     "@types/node": {
-      "version": "26.6.10",
-      "resolved": "https://registry.npmjs.org/@types/node/-/node-26.6.10.tgz",
+      "version": "26.6.11",
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-26.6.11.tgz",
       "overridden": false,
       "dependencies": {
         "undici-types": {
@@ -1070,8 +1070,8 @@
       "overridden": false
     },
     "@vitest/coverage-v8": {
-      "version": "5.1.1",
-      "resolved": "https://registry.npmjs.org/@vitest/coverage-v8/-/coverage-v8-5.1.1.tgz",
+      "version": "5.1.2",
+      "resolved": "https://registry.npmjs.org/@vitest/coverage-v8/-/coverage-v8-5.1.2.tgz",
       "overridden": false,
       "dependencies": {
         "@bcoe/v8-coverage": {
@@ -1081,23 +1081,23 @@
         },
         "@vitest/browser": {},
         "@vitest/istanbul-lib-coverage": {
-          "version": "2.1.0",
-          "resolved": "https://registry.npmjs.org/@vitest/istanbul-lib-coverage/-/istanbul-lib-coverage-2.1.0.tgz",
+          "version": "2.1.1",
+          "resolved": "https://registry.npmjs.org/@vitest/istanbul-lib-coverage/-/istanbul-lib-coverage-2.1.1.tgz",
           "overridden": false
         },
         "@vitest/istanbul-lib-report": {
-          "version": "2.1.0",
-          "resolved": "https://registry.npmjs.org/@vitest/istanbul-lib-report/-/istanbul-lib-report-2.1.0.tgz",
+          "version": "2.1.1",
+          "resolved": "https://registry.npmjs.org/@vitest/istanbul-lib-report/-/istanbul-lib-report-2.1.1.tgz",
           "overridden": false,
           "dependencies": {
             "@vitest/istanbul-lib-coverage": {
-              "version": "2.1.0"
+              "version": "2.1.1"
             }
           }
         },
         "ast-v8-to-istanbul": {
-          "version": "1.0.7",
-          "resolved": "https://registry.npmjs.org/ast-v8-to-istanbul/-/ast-v8-to-istanbul-1.0.7.tgz",
+          "version": "1.0.8",
+          "resolved": "https://registry.npmjs.org/ast-v8-to-istanbul/-/ast-v8-to-istanbul-1.0.8.tgz",
           "overridden": false,
           "dependencies": {
             "@jridgewell/trace-mapping": {
@@ -1126,8 +1126,8 @@
               }
             },
             "js-tokens": {
-              "version": "10.0.0",
-              "resolved": "https://registry.npmjs.org/js-tokens/-/js-tokens-10.0.0.tgz",
+              "version": "10.0.2",
+              "resolved": "https://registry.npmjs.org/js-tokens/-/js-tokens-10.0.2.tgz",
               "overridden": false
             }
           }
@@ -1165,8 +1165,8 @@
               }
             },
             "source-map-js": {
-              "version": "1.2.2",
-              "resolved": "https://registry.npmjs.org/source-map-js/-/source-map-js-1.2.2.tgz",
+              "version": "1.2.4",
+              "resolved": "https://registry.npmjs.org/source-map-js/-/source-map-js-1.2.4.tgz",
               "overridden": false
             }
           }
@@ -1187,7 +1187,7 @@
           "overridden": false
         },
         "vitest": {
-          "version": "5.1.1"
+          "version": "5.1.2"
         }
       }
     },
@@ -1990,7 +1990,7 @@
               }
             },
             "rolldown": {
-              "version": "1.2.18"
+              "version": "1.3.4"
             },
             "rollup": {},
             "typescript": {
@@ -2018,23 +2018,23 @@
               }
             },
             "vite": {
-              "version": "8.3.8"
+              "version": "8.4.0"
             },
             "webpack": {}
           }
         },
         "vite": {
-          "version": "8.3.8"
+          "version": "8.4.0"
         }
       }
     },
     "vite": {
-      "version": "8.3.8",
-      "resolved": "https://registry.npmjs.org/vite/-/vite-8.3.8.tgz",
+      "version": "8.4.0",
+      "resolved": "https://registry.npmjs.org/vite/-/vite-8.4.0.tgz",
       "overridden": false,
       "dependencies": {
         "@types/node": {
-          "version": "26.6.10"
+          "version": "26.6.11"
         },
         "@vitejs/devtools": {},
         "esbuild": {
@@ -2108,14 +2108,15 @@
             "lightningcss-win32-x64-msvc": {}
           }
         },
+        "napi-windows-process-start-time": {},
         "picomatch": {
           "version": "4.0.7",
           "resolved": "https://registry.npmjs.org/picomatch/-/picomatch-4.0.7.tgz",
           "overridden": false
         },
         "postcss": {
-          "version": "8.5.32",
-          "resolved": "https://registry.npmjs.org/postcss/-/postcss-8.5.32.tgz",
+          "version": "8.5.34",
+          "resolved": "https://registry.npmjs.org/postcss/-/postcss-8.5.34.tgz",
           "overridden": false,
           "dependencies": {
             "nanoid": {
@@ -2129,25 +2130,25 @@
               "overridden": false
             },
             "source-map-js": {
-              "version": "1.2.2"
+              "version": "1.2.4"
             }
           }
         },
         "rolldown": {
-          "version": "1.2.18",
-          "resolved": "https://registry.npmjs.org/rolldown/-/rolldown-1.2.18.tgz",
+          "version": "1.3.4",
+          "resolved": "https://registry.npmjs.org/rolldown/-/rolldown-1.3.4.tgz",
           "overridden": false,
           "dependencies": {
             "@oxc-project/types": {
-              "version": "0.156.0",
-              "resolved": "https://registry.npmjs.org/@oxc-project/types/-/types-0.156.0.tgz",
+              "version": "0.160.0",
+              "resolved": "https://registry.npmjs.org/@oxc-project/types/-/types-0.160.0.tgz",
               "overridden": false
             },
             "@rolldown/binding-android-arm-eabi": {},
             "@rolldown/binding-android-arm64": {},
             "@rolldown/binding-darwin-arm64": {
-              "version": "1.2.18",
-              "resolved": "https://registry.npmjs.org/@rolldown/binding-darwin-arm64/-/binding-darwin-arm64-1.2.18.tgz",
+              "version": "1.3.4",
+              "resolved": "https://registry.npmjs.org/@rolldown/binding-darwin-arm64/-/binding-darwin-arm64-1.3.4.tgz",
               "overridden": false
             },
             "@rolldown/binding-darwin-x64": {},
@@ -2160,6 +2161,7 @@
             "@rolldown/binding-linux-x64-gnu": {},
             "@rolldown/binding-linux-x64-musl": {},
             "@rolldown/binding-openharmony-arm64": {},
+            "@rolldown/binding-wasm32-wasi": {},
             "@rolldown/binding-win32-arm64-msvc": {},
             "@rolldown/binding-win32-x64-msvc": {},
             "@rolldown/pluginutils": {
@@ -2203,8 +2205,8 @@
       }
     },
     "vitest": {
-      "version": "5.1.1",
-      "resolved": "https://registry.npmjs.org/vitest/-/vitest-5.1.1.tgz",
+      "version": "5.1.2",
+      "resolved": "https://registry.npmjs.org/vitest/-/vitest-5.1.2.tgz",
       "overridden": false,
       "dependencies": {
         "@edge-runtime/vm": {},
@@ -2227,26 +2229,26 @@
           }
         },
         "@types/node": {
-          "version": "26.6.10"
+          "version": "26.6.11"
         },
         "@vitest/browser-playwright": {},
         "@vitest/browser-preview": {},
         "@vitest/browser-webdriverio": {},
         "@vitest/coverage-istanbul": {},
         "@vitest/coverage-v8": {
-          "version": "5.1.1"
+          "version": "5.1.2"
         },
         "@vitest/mocker": {
-          "version": "5.1.1",
-          "resolved": "https://registry.npmjs.org/@vitest/mocker/-/mocker-5.1.1.tgz",
+          "version": "5.1.2",
+          "resolved": "https://registry.npmjs.org/@vitest/mocker/-/mocker-5.1.2.tgz",
           "overridden": false,
           "dependencies": {
             "@jridgewell/trace-mapping": {
               "version": "0.3.31"
             },
             "@vitest/spy": {
-              "version": "5.1.1",
-              "resolved": "https://registry.npmjs.org/@vitest/spy/-/spy-5.1.1.tgz",
+              "version": "5.1.2",
+              "resolved": "https://registry.npmjs.org/@vitest/spy/-/spy-5.1.2.tgz",
               "overridden": false
             },
             "estree-walker": {
@@ -2264,7 +2266,7 @@
             },
             "msw": {},
             "vite": {
-              "version": "8.3.8"
+              "version": "8.4.0"
             }
           }
         },
@@ -2321,7 +2323,7 @@
           "version": "0.2.17"
         },
         "vite": {
-          "version": "8.3.8"
+          "version": "8.4.0"
         },
         "why-is-node-running": {
           "version": "3.2.1",
@@ -2376,7 +2378,7 @@
               "version": "7.30.2"
             },
             "vitest": {
-              "version": "5.1.1"
+              "version": "5.1.2"
             }
           }
         },
@@ -2423,7 +2425,7 @@
               "overridden": false,
               "dependencies": {
                 "@types/node": {
-                  "version": "26.6.10"
+                  "version": "26.6.11"
                 },
                 "form-data": {
                   "version": "4.0.6",

@@ -1,7 +1,7 @@
 {
   "metadata": {
     "version": "0.14.0",
-    "generatedAt": "2026-11-25T11:16:13.434Z",
+    "generatedAt": "2026-11-27T13:40:11.480Z",
     "integration": "vite",
     "sources": false,
     "gzip": true,
@@ -30,8 +30,8 @@
       "kind": "asset",
       "name": "dist/dpuse-connector-dbnomics.es.js",
       "type": "script",
-      "uncompressed": 19502,
-      "gzip": 5506,
+      "uncompressed": 19528,
+      "gzip": 5513,
       "brotli": 0
     },
     {
@@ -39,7 +39,7 @@
       "name": "node_modules/@dpuse/dpuse-shared/dist/dpuse-shared.es.js",
       "type": "script",
       "format": "esm",
-      "uncompressed": 72767
+      "uncompressed": 72770
     },
     {
       "kind": "chunk",
@@ -47,7 +47,7 @@
       "type": "script",
       "format": "esm",
       "uncompressed": 9492,
-      "gzip": 2735,
+      "gzip": 2736,
       "brotli": 0,
       "parent": "dist/dpuse-connector-dbnomics.es.js"
     },
@@ -56,15 +56,15 @@
       "name": "src/index.ts",
       "type": "script",
       "format": "esm",
-      "uncompressed": 13986
+      "uncompressed": 14042
     },
     {
       "kind": "chunk",
       "name": "src/index.ts",
       "type": "script",
       "format": "esm",
-      "uncompressed": 7923,
-      "gzip": 2560,
+      "uncompressed": 7949,
+      "gzip": 2566,
       "brotli": 0,
       "parent": "dist/dpuse-connector-dbnomics.es.js"
     }
