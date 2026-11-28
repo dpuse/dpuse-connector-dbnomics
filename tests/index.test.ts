@@ -1,6 +1,7 @@
 import { Connector } from '@/index';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { ConnectorUtilities, PreviewObjectOptions, RetrieveRecordsChunk, RetrieveRecordsOptions, RetrieveRecordsSummary } from '@dpuse/dpuse-shared';
+import type { ConnectorUtilities, PreviewObjectOptions, PreviewObjectResult } from '@dpuse/dpuse-shared';
+import type { RetrieveRecordsChunk, RetrieveRecordsOptions, RetrieveRecordsSummary } from '@dpuse/dpuse-shared';
 
 // ── Constants ────────────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -260,6 +261,25 @@ describe('Connector', () => {
             const result = await connector.previewObject({ path: '/IMF/AFRREO/A.NGDP' } as PreviewObjectOptions);
 
             expect(result.sampleConfig.parsedRecords).toHaveLength(51); // 1 header row + 50 data rows, not all 60 observations.
+        });
+
+        it('tells type inference whether the preview holds the whole series, and says the same in the audit', async () => {
+            const inferDataTypes = vi.fn(() => ({ columnConfigs: [], hasHeaders: true }));
+            const connector = new Connector({ ...buildConnectorUtilities(), inferDataTypes }, []);
+            const previewSeries = async (observationCount: number): Promise<PreviewObjectResult> => {
+                const period = Array.from({ length: observationCount }, (_, index) => String(2000 + index));
+                const value = Array.from({ length: observationCount }, (_, index) => index);
+                const seriesCode = `A.${String(observationCount)}`; // A code of its own, so the second preview is not answered from the first one's cache.
+                const response = buildFetchResponse({ series: { docs: [{ series_code: seriesCode, series_name: 'GDP', period, value }], num_found: 1 } });
+                vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response));
+                return await connector.previewObject({ path: `/IMF/AFRREO/${seriesCode}` } as PreviewObjectOptions);
+            };
+
+            const wholeSeries = await previewSeries(50);
+            const partOfSeries = await previewSeries(51);
+
+            expect([wholeSeries.contentAuditConfig.isComplete, partOfSeries.contentAuditConfig.isComplete]).toEqual([true, false]);
+            expect(inferDataTypes.mock.calls.map((call: unknown[]) => call[3])).toEqual([true, false]);
         });
 
         it('rejects an invalid object path', async () => {
